@@ -1,5 +1,5 @@
---- old/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:29:58 2017
-+++ new/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:29:58 2017
+--- old/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:44:34 2017
++++ new/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:44:34 2017
 @@ -20,6 +20,7 @@
   */
  /*

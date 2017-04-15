@@ -1,5 +1,5 @@
---- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:29:59 2017
-+++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:29:59 2017
+--- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
++++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
 @@ -25,6 +25,9 @@
  #
  # fmd configuration file for the zfs retire agent.

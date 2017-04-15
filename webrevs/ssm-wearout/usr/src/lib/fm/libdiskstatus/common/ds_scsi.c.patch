@@ -1,5 +1,5 @@
---- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:29:59 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:29:59 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:44:36 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:44:36 2017
 @@ -21,10 +21,9 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.

@@ -1,5 +1,5 @@
---- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:29:58 2017
-+++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:29:58 2017
+--- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:44:35 2017
++++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:44:35 2017
 @@ -22,6 +22,7 @@
  /*
   * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
