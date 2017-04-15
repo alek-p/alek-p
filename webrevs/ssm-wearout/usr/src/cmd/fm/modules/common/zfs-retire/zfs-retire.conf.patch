@@ -1,10 +1,10 @@
---- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 23:15:27 2017
++++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 23:15:27 2017
 @@ -25,6 +25,9 @@
  #
  # fmd configuration file for the zfs retire agent.
  #
-+# To enable automated retire for SSM wearout faults uncomment the bellow line:
++# To enable automated retire for SSM wearout faults uncomment the line below:
 +# setprop ssm_wearout_skip_retire false
 +#
  subscribe fault.fs.zfs.*

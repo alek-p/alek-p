@@ -1,5 +1,5 @@
---- old/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 12:44:36 2017
+--- old/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 23:15:28 2017
++++ new/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 23:15:28 2017
 @@ -21,13 +21,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.

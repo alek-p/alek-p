@@ -1,5 +1,5 @@
---- old/usr/src/cmd/fm/dicts/DISK.dict	Sat Apr 15 12:44:34 2017
-+++ new/usr/src/cmd/fm/dicts/DISK.dict	Sat Apr 15 12:44:34 2017
+--- old/usr/src/cmd/fm/dicts/DISK.dict	Sat Apr 15 23:15:26 2017
++++ new/usr/src/cmd/fm/dicts/DISK.dict	Sat Apr 15 23:15:26 2017
 @@ -1,6 +1,7 @@
  #
  # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
@@ -13,8 +13,8 @@
  fault.io.scsi.cmd.disk.dev.rqs.derr=3
  fault.io.scsi.cmd.disk.dev.rqs.merr=4
 +fault.io.disk.ssm-wearout=8
---- old/usr/src/cmd/fm/dicts/DISK.po	Sat Apr 15 12:44:34 2017
-+++ new/usr/src/cmd/fm/dicts/DISK.po	Sat Apr 15 12:44:34 2017
+--- old/usr/src/cmd/fm/dicts/DISK.po	Sat Apr 15 23:15:26 2017
++++ new/usr/src/cmd/fm/dicts/DISK.po	Sat Apr 15 23:15:26 2017
 @@ -1,6 +1,7 @@
  #
  # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
@@ -36,15 +36,15 @@
 +msgid "DISK-8000-8D.severity"
 +msgstr "Major"
 +msgid "DISK-8000-8D.description"
-+msgstr "A solid state media device is nearing end of life as projected by the manufacturer.\n"
++msgstr "A solid state media device is nearing end of life as projected by the manufacturer."
 +msgid "DISK-8000-8D.response"
-+msgstr "None.\n"
++msgstr "None."
 +msgid "DISK-8000-8D.impact"
-+msgstr "Performance degradation is likely and continued operation of this device will cause drive failure and potential data loss.\n"
++msgstr "Performance degradation is likely and continued operation of this device will cause drive failure and potential data loss."
 +msgid "DISK-8000-8D.action"
-+msgstr "Schedule a repair procedure to replace the affected drive.\nUse fmdump -V -u <EVENT_ID> to identify the drive.\n"
---- old/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:44:34 2017
-+++ new/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 12:44:34 2017
++msgstr "Schedule a repair procedure to replace the affected drive.\nUse fmdump -V -u <EVENT_ID> to identify the drive."
+--- old/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 23:15:26 2017
++++ new/usr/src/cmd/fm/eversholt/files/common/disk.esc	Sat Apr 15 23:15:26 2017
 @@ -20,6 +20,7 @@
   */
  /*
@@ -90,8 +90,8 @@
 +    payloadprop("current-ssm-wearout"))
 +    && setpayloadprop("threshold-wearout-percentage",
 +    payloadprop("threshold-ssm-wearout")) };
---- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 23:15:26 2017
++++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 23:15:26 2017
 @@ -22,6 +22,7 @@
  /*
   * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
@@ -111,8 +111,8 @@
  	dm_fault_indicator_set(diskp, INDICATOR_ON);
  
  	if (action_prop != NULL &&
---- old/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h	Sat Apr 15 23:15:26 2017
++++ new/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h	Sat Apr 15 23:15:26 2017
 @@ -22,13 +22,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -136,8 +136,8 @@
  
  /* Properties for the "ap" subentity */
  #define	DISK_AP_PROP_APID "path"
---- old/usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf	Sat Apr 15 23:15:27 2017
++++ new/usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf	Sat Apr 15 23:15:27 2017
 @@ -21,5 +21,8 @@
  #
  # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -148,8 +148,8 @@
 +#
 +# To disable transport of "high solid state media used %" faults uncomment:
 +# setprop ignore-ssm-wearout true
---- old/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c	Sat Apr 15 23:15:27 2017
++++ new/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c	Sat Apr 15 23:15:27 2017
 @@ -21,10 +21,9 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -250,20 +250,20 @@
  	 *
  	 * When the transport module encounters an FMRI containing the given
  	 * string, then it will open the simulator file instead of the
---- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 23:15:27 2017
++++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf	Sat Apr 15 23:15:27 2017
 @@ -25,6 +25,9 @@
  #
  # fmd configuration file for the zfs retire agent.
  #
-+# To enable automated retire for SSM wearout faults uncomment the bellow line:
++# To enable automated retire for SSM wearout faults uncomment the line below:
 +# setprop ssm_wearout_skip_retire false
 +#
  subscribe fault.fs.zfs.*
  subscribe fault.io.*
  subscribe resource.fs.zfs.removed
---- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c	Sat Apr 15 12:44:35 2017
+--- old/usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c	Sat Apr 15 23:15:27 2017
++++ new/usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c	Sat Apr 15 23:15:27 2017
 @@ -427,6 +427,14 @@
  		    &retire) == 0 && retire == 0)
  			continue;
@@ -287,8 +287,8 @@
  	{ NULL, 0, NULL }
  };
  
---- old/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 12:44:35 2017
-+++ new/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 12:44:35 2017
+--- old/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 23:15:27 2017
++++ new/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 23:15:27 2017
 @@ -21,8 +21,8 @@
  #
  # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -308,8 +308,8 @@
  all :=		TARGET= all
  clean :=	TARGET= clean
  clobber :=	TARGET= clobber
---- old/usr/src/lib/fm/libdiskstatus/common/ds_impl.h	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/ds_impl.h	Sat Apr 15 12:44:36 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/ds_impl.h	Sat Apr 15 23:15:27 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/ds_impl.h	Sat Apr 15 23:15:27 2017
 @@ -21,13 +21,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -341,8 +341,8 @@
  
  extern void dprintf(const char *, ...);
  extern void ddump(const char *, const void *, size_t);
---- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 12:44:36 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 23:15:27 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 23:15:27 2017
 @@ -21,10 +21,9 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -501,8 +501,8 @@
  /*
   * Analyze the IE mode sense page explicitly.  This is only needed if the IE log
   * page is not supported.
---- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h	Sat Apr 15 12:44:36 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h	Sat Apr 15 23:15:28 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h	Sat Apr 15 23:15:28 2017
 @@ -21,13 +21,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -574,8 +574,8 @@
  
  #define	MSG_BUFLEN	256
  
---- old/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c	Sat Apr 15 12:44:36 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c	Sat Apr 15 23:15:28 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c	Sat Apr 15 23:15:28 2017
 @@ -21,10 +21,9 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -635,8 +635,8 @@
  
  	if ((err = nvlist_add_nvlist(nvl, "faults", faults)) != 0)
  		goto nverror;
---- old/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 12:44:36 2017
+--- old/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 23:15:28 2017
++++ new/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 23:15:28 2017
 @@ -21,13 +21,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -660,8 +660,8 @@
  
  #ifdef	__cplusplus
  }
---- old/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 12:44:36 2017
-+++ new/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 12:44:36 2017
+--- old/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 23:15:28 2017
++++ new/usr/src/uts/common/sys/fm/io/scsi.h	Sat Apr 15 23:15:28 2017
 @@ -21,13 +21,12 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
