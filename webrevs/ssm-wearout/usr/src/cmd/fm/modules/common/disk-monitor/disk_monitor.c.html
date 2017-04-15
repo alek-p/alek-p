@@ -1,0 +1,489 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout New usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c</title>
+<body id="SUNWwebrev">
+<pre>
+   1 /*
+   2  * CDDL HEADER START
+   3  *
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 
+  22 /*
+  23  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+  24  * Use is subject to license terms.
+  25  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+  26  */
+  27 
+  28 /*
+  29  * Disk Monitor
+  30  */
+  31 #include &lt;sys/types.h&gt;
+  32 #include &lt;sys/stat.h&gt;
+  33 #include &lt;fcntl.h&gt;
+  34 #include &lt;time.h&gt;
+  35 #include &lt;stdio.h&gt;
+  36 #include &lt;stdlib.h&gt;
+  37 #include &lt;strings.h&gt;
+  38 #include &lt;stdarg.h&gt;
+  39 #include &lt;errno.h&gt;
+  40 #include &lt;signal.h&gt;
+  41 #include &lt;unistd.h&gt;
+  42 #include &lt;pthread.h&gt;
+  43 #include &lt;libnvpair.h&gt;
+  44 #include &lt;fm/fmd_api.h&gt;
+  45 #include &lt;fm/fmd_fmri.h&gt;
+  46 #include &lt;sys/fm/protocol.h&gt;
+  47 #include &lt;sys/fm/io/disk.h&gt;
+  48 #include &lt;fm/libtopo.h&gt;
+  49 
+  50 #include "disk_monitor.h"
+  51 #include "hotplug_mgr.h"
+  52 #include "schg_mgr.h"
+  53 #include "topo_gather.h"
+  54 #include "dm_platform.h"
+  55 
+  56 #define THIS_FMD_MODULE_NAME "disk-monitor"
+  57 
+  58 static enum disk_init_state {
+  59         INIT_STATE_NONE = 0,
+  60         STATE_CHANGE_MGR_INITTED = 2,
+  61         HOTPLUG_MGR_INITTED = 4
+  62 } g_init_state = INIT_STATE_NONE;
+  63 
+  64 typedef enum {
+  65         LT_SUSPECT,
+  66         LT_REPAIRED
+  67 } fm_list_type_t;
+  68 
+  69 /*
+  70  * Global verbosity flag -- controls chattiness of debug messages and
+  71  * warnings.  Its value is determined by the fmd property "log-level"
+  72  * settable in the DE's .conf file.
+  73  */
+  74 log_class_t                     g_verbose = 0;
+  75 cfgdata_t                       *config_data = NULL;
+  76 fmd_hdl_t                       *g_fm_hdl = NULL;
+  77 
+  78 static const fmd_prop_t         fmd_props[];
+  79 
+  80 static void
+  81 diskmon_teardown_all(void)
+  82 {
+  83         cleanup_hotplug_manager();
+  84         cleanup_state_change_manager(config_data);
+  85         config_fini();
+  86 }
+  87 
+  88 static int
+  89 count_disks(diskmon_t *disklistp)
+  90 {
+  91         int i = 0;
+  92 
+  93         while (disklistp != NULL) {
+  94                 i++;
+  95                 disklistp = disklistp-&gt;next;
+  96         }
+  97 
+  98         return (i);
+  99 }
+ 100 
+ 101 static int
+ 102 diskmon_init(void)
+ 103 {
+ 104         /*
+ 105          * Block the generation of state change events (generated by the
+ 106          * hotplug manager thread) here; they will be unblocked after the
+ 107          * state change manager thread is ready to accept state changes
+ 108          * (shortly after it starts).
+ 109          */
+ 110         block_state_change_events();
+ 111 
+ 112         if (dm_platform_init() != 0)
+ 113                 goto cleanup;
+ 114 
+ 115         if (init_hotplug_manager() != 0)
+ 116                 goto cleanup;
+ 117         else
+ 118                 g_init_state |= HOTPLUG_MGR_INITTED;
+ 119 
+ 120         if (init_state_change_manager(config_data) != 0)
+ 121                 goto cleanup;
+ 122         else
+ 123                 g_init_state |= STATE_CHANGE_MGR_INITTED;
+ 124 
+ 125         return (E_SUCCESS);
+ 126 
+ 127 cleanup:
+ 128 
+ 129         unblock_state_change_events();
+ 130 
+ 131         /*
+ 132          * The cleanup order here does matter, due to dependencies between the
+ 133          * managers.
+ 134          */
+ 135         if (g_init_state &amp; HOTPLUG_MGR_INITTED)
+ 136                 cleanup_hotplug_manager();
+ 137         if (g_init_state &amp; STATE_CHANGE_MGR_INITTED)
+ 138                 cleanup_state_change_manager(config_data);
+ 139         dm_platform_fini();
+ 140 
+ 141         return (E_ERROR);
+ 142 }
+ 143 
+ 144 static void
+ 145 dm_fault_execute_actions(fmd_hdl_t *hdl, diskmon_t *diskp, nvlist_t *nvl)
+ 146 {
+ 147         const char              *action_prop = NULL;
+ 148         const char              *action_string;
+ 149 
+ 150         /*
+ 151          * The predictive failure action is the activation of the fault
+ 152          * indicator.
+ 153          */
+ 154         if (fmd_nvl_class_match(hdl, nvl,
+ 155             DISK_ERROR_CLASS "." FM_FAULT_DISK_OVERTEMP))
+ 156                 action_prop = DISK_PROP_OTEMPACTION;
+ 157 
+ 158         if (fmd_nvl_class_match(hdl, nvl,
+ 159             DISK_ERROR_CLASS "." FM_FAULT_DISK_TESTFAIL))
+ 160                 action_prop = DISK_PROP_STFAILACTION;
+ 161 
+ 162         if (fmd_nvl_class_match(hdl, nvl,
+ 163             DISK_ERROR_CLASS "." FM_FAULT_SSM_WEAROUT))
+ 164                 action_prop = DISK_PROP_SSMWEAROUTACTION;
+ 165 
+ 166         dm_fault_indicator_set(diskp, INDICATOR_ON);
+ 167 
+ 168         if (action_prop != NULL &amp;&amp;
+ 169             (action_string = dm_prop_lookup(diskp-&gt;props, action_prop))
+ 170             != NULL) {
+ 171 
+ 172                 if (dm_platform_indicator_execute(action_string) != 0) {
+ 173                         log_warn("Fault action `%s' did not successfully "
+ 174                             "complete.\n", action_string);
+ 175                 }
+ 176         }
+ 177 }
+ 178 
+ 179 static void
+ 180 diskmon_agent_repair(fmd_hdl_t *hdl, nvlist_t *nvl, int repair)
+ 181 {
+ 182         char            *uuid = NULL;
+ 183         nvlist_t        **nva;
+ 184         uint_t          nvc;
+ 185         diskmon_t       *diskp;
+ 186         nvlist_t        *fmri;
+ 187         nvlist_t        *fltnvl;
+ 188         int             err = 0;
+ 189 
+ 190         err |= nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid);
+ 191         err |= nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 192             &amp;nva, &amp;nvc);
+ 193         if (err != 0)
+ 194                 return;
+ 195 
+ 196         while (nvc-- != 0) {
+ 197 
+ 198                 fltnvl = *nva++;
+ 199 
+ 200                 if (nvlist_lookup_nvlist(fltnvl, FM_FAULT_RESOURCE, &amp;fmri)
+ 201                     != 0)
+ 202                         continue;
+ 203 
+ 204                 if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 205                         continue;
+ 206 
+ 207                 log_msg(MM_MAIN, "Disk %s repaired!\n",
+ 208                     diskp-&gt;location);
+ 209 
+ 210                 dm_fault_indicator_set(diskp, INDICATOR_OFF);
+ 211 
+ 212                 dm_state_change(diskp, HPS_REPAIRED);
+ 213         }
+ 214 
+ 215         if (repair)
+ 216                 fmd_case_uuresolved(hdl, uuid);
+ 217 
+ 218 }
+ 219 
+ 220 static void
+ 221 diskmon_agent_suspect(fmd_hdl_t *hdl, nvlist_t *nvl)
+ 222 {
+ 223         char            *uuid = NULL;
+ 224         nvlist_t        **nva;
+ 225         uint_t          nvc;
+ 226         diskmon_t       *diskp;
+ 227         nvlist_t        *fmri;
+ 228         nvlist_t        *fltnvl;
+ 229         int             err = 0;
+ 230 
+ 231         err |= nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid);
+ 232         err |= nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 233             &amp;nva, &amp;nvc);
+ 234         if (err != 0)
+ 235                 return;
+ 236 
+ 237         while (nvc-- != 0 &amp;&amp; !fmd_case_uuclosed(hdl, uuid)) {
+ 238 
+ 239                 fltnvl = *nva++;
+ 240 
+ 241                 if (nvlist_lookup_nvlist(fltnvl, FM_FAULT_RESOURCE, &amp;fmri) != 0)
+ 242                         continue;
+ 243 
+ 244                 if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 245                         continue;
+ 246 
+ 247                 /* Execute the actions associated with this fault */
+ 248                 dm_fault_execute_actions(hdl, diskp,  fltnvl);
+ 249 
+ 250                 /*
+ 251                  * Send a state change event to the state change manager
+ 252                  */
+ 253                 dm_state_change(diskp, HPS_FAULTED);
+ 254         }
+ 255 
+ 256         if (!fmd_case_uuclosed(hdl, uuid)) {
+ 257                 /* Case is closed */
+ 258                 fmd_case_uuclose(hdl, uuid);
+ 259         }
+ 260 }
+ 261 
+ 262 /*ARGSUSED*/
+ 263 static void
+ 264 diskmon_recv(fmd_hdl_t *hdl, fmd_event_t *ep, nvlist_t *nvl, const char *class)
+ 265 {
+ 266         diskmon_t       *diskp;
+ 267         nvlist_t        *fmri;
+ 268 
+ 269         if (g_verbose &amp; MM_MAIN)
+ 270                 nvlist_print(stderr, nvl);
+ 271 
+ 272         /*
+ 273          * Act on the fault suspect list or repaired list (embedded agent
+ 274          * action).
+ 275          */
+ 276         if (fmd_nvl_class_match(hdl, nvl, FM_LIST_REPAIRED_CLASS)) {
+ 277 
+ 278                 diskmon_agent_repair(hdl, nvl, 1);
+ 279                 return;
+ 280 
+ 281         } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_UPDATED_CLASS)) {
+ 282 
+ 283                 diskmon_agent_repair(hdl, nvl, 0);
+ 284                 return;
+ 285 
+ 286         } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_SUSPECT_CLASS)) {
+ 287 
+ 288                 diskmon_agent_suspect(hdl, nvl);
+ 289                 return;
+ 290         } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_RESOLVED_CLASS)) {
+ 291                 return;
+ 292         }
+ 293 
+ 294         /*
+ 295          * If we get any replayed faults, set the diskmon's faulted
+ 296          * flag for the appropriate fault, then change the diskmon's state
+ 297          * to faulted.
+ 298          */
+ 299         if (fmd_nvl_class_match(hdl, nvl, DISK_ERROR_CLASS ".*")) {
+ 300 
+ 301                 if (nvlist_lookup_nvlist(nvl, FM_FAULT_RESOURCE,
+ 302                     &amp;fmri) != 0)
+ 303                         return;
+ 304 
+ 305                 if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 306                         return;
+ 307 
+ 308                 /* Execute the actions associated with this fault */
+ 309                 dm_fault_execute_actions(hdl, diskp, nvl);
+ 310 
+ 311                 /*
+ 312                  * If the fault wasn't generated by this module, send a
+ 313                  * state change event to the state change manager
+ 314                  */
+ 315                 dm_state_change(diskp, HPS_FAULTED);
+ 316                 return;
+ 317         }
+ 318 }
+ 319 
+ 320 static const fmd_hdl_ops_t fmd_ops = {
+ 321         diskmon_recv,   /* fmdo_recv */
+ 322         NULL,           /* fmdo_timeout */
+ 323         NULL,           /* fmdo_close */
+ 324         NULL,           /* fmdo_stats */
+ 325         NULL,           /* fmdo_gc */
+ 326 };
+ 327 
+ 328 static const fmd_prop_t fmd_props[] = {
+ 329         { GLOBAL_PROP_LOG_LEVEL, FMD_TYPE_UINT32, "0" },
+ 330         { NULL, 0, NULL }
+ 331 };
+ 332 
+ 333 static const fmd_hdl_info_t fmd_info = {
+ 334         "Disk Monitor",
+ 335         DISK_MONITOR_MODULE_VERSION,
+ 336         &amp;fmd_ops,
+ 337         fmd_props
+ 338 };
+ 339 
+ 340 void
+ 341 _fmd_init(fmd_hdl_t *hdl)
+ 342 {
+ 343         fmd_case_t      *cp;
+ 344         int             disk_count;
+ 345 
+ 346         g_fm_hdl = hdl;
+ 347 
+ 348         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0) {
+ 349                 return;
+ 350         }
+ 351 
+ 352         if (config_init()) {
+ 353                 log_err("Could not initialize configuration!\n");
+ 354                 fmd_hdl_unregister(hdl);
+ 355                 return;
+ 356         }
+ 357 
+ 358         if (config_get(hdl, fmd_props)) {
+ 359                 config_fini();
+ 360                 log_err("Could not retrieve configuration from libtopo!\n");
+ 361                 fmd_hdl_unregister(hdl);
+ 362                 return;
+ 363         }
+ 364 
+ 365         /*
+ 366          * If there are no disks to monitor, bail out
+ 367          */
+ 368         if ((disk_count = count_disks(config_data-&gt;disk_list)) == 0) {
+ 369                 config_fini();
+ 370                 fmd_hdl_unregister(hdl);
+ 371                 return;
+ 372         }
+ 373 
+ 374         if (diskmon_init() == E_ERROR) {
+ 375                 config_fini();
+ 376                 fmd_hdl_unregister(hdl);
+ 377                 return;
+ 378         }
+ 379 
+ 380         log_msg(MM_MAIN, "Monitoring %d disks.\n", disk_count);
+ 381 
+ 382         /*
+ 383          * Iterate over all active cases.
+ 384          * Since we automatically solve all cases, these cases must have
+ 385          * had the fault added, but the DE must have been interrupted
+ 386          * before they were solved.
+ 387          */
+ 388         for (cp = fmd_case_next(hdl, NULL);
+ 389             cp != NULL; cp = fmd_case_next(hdl, cp)) {
+ 390 
+ 391                 if (!fmd_case_solved(hdl, cp))
+ 392                         fmd_case_solve(hdl, cp);
+ 393         }
+ 394 }
+ 395 
+ 396 /*ARGSUSED*/
+ 397 void
+ 398 _fmd_fini(fmd_hdl_t *hdl)
+ 399 {
+ 400         diskmon_teardown_all();
+ 401         g_fm_hdl = NULL;
+ 402 }
+</pre></body></html>

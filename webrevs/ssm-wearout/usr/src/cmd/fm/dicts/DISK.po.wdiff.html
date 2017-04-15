@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/cmd/fm/dicts/DISK.po</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/cmd/fm/dicts/DISK.po
+</span><span class='added'>          +++ new/usr/src/cmd/fm/dicts/DISK.po
+</span>   1    1  #
+   2    2  # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+   3    3  # Use is subject to license terms.
+<span class='added'>        4 +# Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>   4    5  #
+   5    6  # CDDL HEADER START
+   6    7  #
+   7    8  # The contents of this file are subject to the terms of the
+   8    9  # Common Development and Distribution License (the "License").
+   9   10  # You may not use this file except in compliance with the License.
+  10   11  #
+  11   12  # You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+  12   13  # or http://www.opensolaris.org/os/licensing.
+  13   14  # See the License for the specific language governing permissions
+</pre>
+<pre id='elided1' class='elided' style='display: none'>  14   15  # and limitations under the License.
+  15   16  #
+  16   17  # When distributing Covered Code, include this CDDL HEADER in each
+  17   18  # file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  18   19  # If applicable, add the following below this CDDL HEADER, with the
+  19   20  # fields enclosed by brackets "[]" replaced with your own identifying
+  20   21  # information: Portions Copyright [yyyy] [name of copyright owner]
+  21   22  #
+  22   23  # CDDL HEADER END
+  23   24  #
+  24   25  #
+  25   26  # DO NOT EDIT -- this file is generated by the Event Registry.
+  26   27  #
+  27   28  #
+  28   29  # code: DISK-8000-0X
+  29   30  # keys: fault.io.disk.predictive-failure
+  30   31  #
+  31   32  msgid "DISK-8000-0X.type"
+  32   33  msgstr "Fault"
+  33   34  msgid "DISK-8000-0X.severity"
+  34   35  msgstr "Major"
+  35   36  msgid "DISK-8000-0X.description"
+  36   37  msgstr "SMART health-monitoring firmware reported that a disk\nfailure is imminent.\n  Refer to %s for more information."
+  37   38  msgid "DISK-8000-0X.response"
+  38   39  msgstr "None.\n"
+  39   40  msgid "DISK-8000-0X.impact"
+  40   41  msgstr "It is likely that the continued operation of\nthis disk will result in data loss.\n"
+  41   42  msgid "DISK-8000-0X.action"
+  42   43  msgstr "Schedule a repair procedure to replace the affected disk.\nUse fmdump -v -u &lt;EVENT_ID&gt; to identify the disk.\n"
+  43   44  #
+  44   45  # code: DISK-8000-12
+  45   46  # keys: fault.io.disk.over-temperature
+  46   47  #
+  47   48  msgid "DISK-8000-12.type"
+  48   49  msgstr "Fault"
+  49   50  msgid "DISK-8000-12.severity"
+  50   51  msgstr "Major"
+  51   52  msgid "DISK-8000-12.description"
+  52   53  msgstr "A disk's temperature exceeded the limits established by\nits manufacturer.\n  Refer to %s for more information."
+  53   54  msgid "DISK-8000-12.response"
+  54   55  msgstr "None.\n"
+  55   56  msgid "DISK-8000-12.impact"
+  56   57  msgstr "Performance degradation is likely and continued disk operation\nbeyond the temperature threshold can result in disk\ndamage and potential data loss.\n"
+  57   58  msgid "DISK-8000-12.action"
+  58   59  msgstr "Ensure that the system is properly cooled, that all fans are\nfunctional, and that there are no obstructions of airflow to the affected\ndisk.\n"
+  59   60  #
+  60   61  # code: DISK-8000-2J
+  61   62  # keys: fault.io.disk.self-test-failure
+  62   63  #
+  63   64  msgid "DISK-8000-2J.type"
+  64   65  msgstr "Fault"
+  65   66  msgid "DISK-8000-2J.severity"
+  66   67  msgstr "Critical"
+  67   68  msgid "DISK-8000-2J.description"
+  68   69  msgstr "One or more disk self tests failed.\n  Refer to %s for more information."
+  69   70  msgid "DISK-8000-2J.response"
+  70   71  msgstr "None.\n"
+  71   72  msgid "DISK-8000-2J.impact"
+  72   73  msgstr "The disk has failed.\n"
+  73   74  msgid "DISK-8000-2J.action"
+  74   75  msgstr "Schedule a repair procedure to replace the affected disk.\nUse fmdump -v -u &lt;EVENT_ID&gt; to identify the disk.\n"
+  75   76  #
+  76   77  # code: DISK-8000-3E
+  77   78  # keys: fault.io.scsi.cmd.disk.dev.rqs.derr
+  78   79  #
+  79   80  msgid "DISK-8000-3E.type"
+  80   81  msgstr "Fault"
+  81   82  msgid "DISK-8000-3E.severity"
+  82   83  msgstr "Critical"
+  83   84  msgid "DISK-8000-3E.description"
+  84   85  msgstr "A non-recoverable hardware failure was detected by the device while performing a command.\n  Refer to %s for more information."
+  85   86  msgid "DISK-8000-3E.response"
+  86   87  msgstr "The device may be offlined or degraded.\n"
+  87   88  msgid "DISK-8000-3E.impact"
+  88   89  msgstr "The device has failed. The service may have been lost or degraded.\n"
+  89   90  msgid "DISK-8000-3E.action"
+  90   91  msgstr "Ensure that the latest drivers and patches are installed. Schedule a repair procedure to replace the affected\ndevice. Use 'fmadm faulty' to find the affected disk.\n"
+  91   92  #
+  92   93  # code: DISK-8000-4Q
+  93   94  # keys: fault.io.scsi.cmd.disk.dev.rqs.merr
+  94   95  #
+  95   96  msgid "DISK-8000-4Q.type"
+  96   97  msgstr "Fault"
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">83 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  97   98  msgid "DISK-8000-4Q.severity"
+  98   99  msgstr "Critical"
+  99  100  msgid "DISK-8000-4Q.description"
+ 100  101  msgstr "The command was terminated with a non-recovered error condition that may have been caused by a flaw in the media or an error in the recorded data. \n  Refer to %s for more information."
+ 101  102  msgid "DISK-8000-4Q.response"
+ 102  103  msgstr "The device may be offlined or degraded.\n"
+ 103  104  msgid "DISK-8000-4Q.impact"
+ 104  105  msgstr "It is likely that continued operation will result in data corruption, which may eventually cause the loss of service or the service degradation.\n"
+ 105  106  msgid "DISK-8000-4Q.action"
+ 106  107  msgstr "Schedule a repair procedure to replace the affected device. Use 'fmadm faulty' to find the affected disk.\n"
+<span class='added'>      108 +#
+      109 +# code: DISK-8000-8D
+      110 +# keys: fault.io.disk.ssm-wearout
+      111 +#
+      112 +msgid "DISK-8000-8D.type"
+      113 +msgstr "Fault"
+      114 +msgid "DISK-8000-8D.severity"
+      115 +msgstr "Major"
+      116 +msgid "DISK-8000-8D.description"
+      117 +msgstr "A solid state media device is nearing end of life as projected by the manufacturer.\n"
+      118 +msgid "DISK-8000-8D.response"
+      119 +msgstr "None.\n"
+      120 +msgid "DISK-8000-8D.impact"
+      121 +msgstr "Performance degradation is likely and continued operation of this device will cause drive failure and potential data loss.\n"
+      122 +msgid "DISK-8000-8D.action"
+      123 +msgstr "Schedule a repair procedure to replace the affected drive.\nUse fmdump -V -u &lt;EVENT_ID&gt; to identify the drive.\n"
+</span>    </pre>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 1; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 1; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

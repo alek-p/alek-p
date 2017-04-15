@@ -1,0 +1,1632 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+    <script type="text/javascript" src="../../../../../../ancnav.js"></script>
+    </head>
+    <body id="SUNWwebrev" onkeypress="keypress(event);">
+    <a name="0"></a>
+    <pre>XXXX need to add FMA event for SSD wearout</pre><hr></hr>
+<pre>
+   1 /*
+   2  * CDDL HEADER START
+   3  *
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+<a name="1" id="anc1"></a>
+  24  */
+  25 
+<a name="2" id="anc2"></a><span class="removed">  26 #pragma ident   "%Z%%M% %I%     %E% SMI"</span>
+<span class="removed">  27 </span>
+  28 #include &lt;assert.h&gt;
+  29 #include &lt;errno.h&gt;
+  30 #include &lt;libdiskstatus.h&gt;
+  31 #include &lt;limits.h&gt;
+  32 #include &lt;stdlib.h&gt;
+  33 #include &lt;strings.h&gt;
+  34 #include &lt;sys/fm/io/scsi.h&gt;
+  35 
+  36 #include "ds_scsi.h"
+  37 #include "ds_scsi_sim.h"
+  38 #include "ds_scsi_uscsi.h"
+  39 
+  40 typedef struct ds_scsi_info {
+  41         disk_status_t           *si_dsp;
+  42         void                    *si_sim;
+  43         int                     si_cdblen;
+  44         int                     si_supp_mode;
+  45         int                     si_supp_log;
+  46         int                     si_extensions;
+  47         int                     si_reftemp;
+  48         scsi_ms_hdrs_t          si_hdrs;
+  49         scsi_ie_page_t          si_iec_current;
+  50         scsi_ie_page_t          si_iec_changeable;
+  51         nvlist_t                *si_state_modepage;
+  52         nvlist_t                *si_state_logpage;
+  53         nvlist_t                *si_state_iec;
+  54 } ds_scsi_info_t;
+  55 
+  56 #define scsi_set_errno(sip, errno)      (ds_set_errno((sip)-&gt;si_dsp, (errno)))
+  57 
+  58 /*
+  59  * Table to validate log pages
+  60  */
+  61 typedef int (*logpage_validation_fn_t)(ds_scsi_info_t *,
+  62     scsi_log_parameter_header_t *, int, nvlist_t *);
+  63 typedef int (*logpage_analyze_fn_t)(ds_scsi_info_t *,
+  64     scsi_log_parameter_header_t *, int);
+  65 
+  66 typedef struct logpage_validation_entry {
+  67         uchar_t                 ve_code;
+  68         int                     ve_supported;
+  69         const char              *ve_desc;
+  70         logpage_validation_fn_t ve_validate;
+  71         logpage_analyze_fn_t    ve_analyze;
+  72 } logpage_validation_entry_t;
+  73 
+  74 static int logpage_ie_verify(ds_scsi_info_t *,
+  75     scsi_log_parameter_header_t *, int, nvlist_t *);
+  76 static int logpage_temp_verify(ds_scsi_info_t *,
+  77     scsi_log_parameter_header_t *, int, nvlist_t *);
+  78 static int logpage_selftest_verify(ds_scsi_info_t *,
+  79     scsi_log_parameter_header_t *, int, nvlist_t *);
+<a name="3" id="anc3"></a>
+
+  80 
+  81 static int logpage_ie_analyze(ds_scsi_info_t *,
+  82     scsi_log_parameter_header_t *, int);
+  83 static int logpage_temp_analyze(ds_scsi_info_t *,
+  84     scsi_log_parameter_header_t *, int);
+  85 static int logpage_selftest_analyze(ds_scsi_info_t *,
+  86     scsi_log_parameter_header_t *, int);
+<a name="4" id="anc4"></a>
+
+  87 
+  88 static struct logpage_validation_entry log_validation[] = {
+  89         { LOGPAGE_IE,           LOGPAGE_SUPP_IE,
+  90             "informational-exceptions",
+  91             logpage_ie_verify,  logpage_ie_analyze },
+  92         { LOGPAGE_TEMP,         LOGPAGE_SUPP_TEMP,
+  93             "temperature",
+  94             logpage_temp_verify, logpage_temp_analyze },
+  95         { LOGPAGE_SELFTEST,     LOGPAGE_SUPP_SELFTEST,
+  96             "self-test",
+<a name="5" id="anc5"></a><span class="changed">  97             logpage_selftest_verify, logpage_selftest_analyze }</span>
+
+
+
+  98 };
+  99 
+ 100 #define NLOG_VALIDATION (sizeof (log_validation) / sizeof (log_validation[0]))
+ 101 
+ 102 /*
+ 103  * Given an extended sense page, retrieves the sense key, as well as the
+ 104  * additional sense code information.
+ 105  */
+ 106 static void
+ 107 scsi_translate_error(struct scsi_extended_sense *rq, uint_t *skeyp,
+ 108     uint_t *ascp, uint_t *ascqp)
+ 109 {
+ 110         struct scsi_descr_sense_hdr *sdsp =
+ 111             (struct scsi_descr_sense_hdr *)rq;
+ 112 
+ 113         *skeyp = rq-&gt;es_key;
+ 114 
+ 115         /*
+ 116          * Get asc, ascq and info field from sense data.  There are two
+ 117          * possible formats (fixed sense data and descriptor sense data)
+ 118          * depending on the value of es_code.
+ 119          */
+ 120         switch (rq-&gt;es_code) {
+ 121         case CODE_FMT_DESCR_CURRENT:
+ 122         case CODE_FMT_DESCR_DEFERRED:
+ 123 
+ 124                 *ascp = sdsp-&gt;ds_add_code;
+ 125                 *ascqp = sdsp-&gt;ds_qual_code;
+ 126                 break;
+ 127 
+ 128         case CODE_FMT_FIXED_CURRENT:
+ 129         case CODE_FMT_FIXED_DEFERRED:
+ 130         default:
+ 131 
+ 132                 if (rq-&gt;es_add_len &gt;= 6) {
+ 133                         *ascp = rq-&gt;es_add_code;
+ 134                         *ascqp = rq-&gt;es_qual_code;
+ 135                 } else {
+ 136                         *ascp = 0xff;
+ 137                         *ascqp = 0xff;
+ 138                 }
+ 139                 break;
+ 140         }
+ 141 }
+ 142 
+ 143 /*
+ 144  * Routines built atop the bare uscsi commands, which take into account the
+ 145  * command length, automatically translate any scsi errors, and transparently
+ 146  * call into the simulator if active.
+ 147  */
+ 148 static int
+ 149 scsi_mode_select(ds_scsi_info_t *sip, uchar_t page_code, int options,
+ 150     void *buf, uint_t buflen, scsi_ms_hdrs_t *headers, uint_t *skp,
+ 151     uint_t *ascp, uint_t *ascqp)
+ 152 {
+ 153         int result;
+ 154         struct scsi_extended_sense sense;
+ 155         int senselen = sizeof (struct scsi_extended_sense);
+ 156         struct mode_page *mp = (struct mode_page *)buf;
+ 157 
+ 158         assert(sip-&gt;si_cdblen == MODE_CMD_LEN_6 ||
+ 159             sip-&gt;si_cdblen == MODE_CMD_LEN_10);
+ 160         assert(headers-&gt;ms_length == sip-&gt;si_cdblen);
+ 161 
+ 162         bzero(&amp;sense, sizeof (struct scsi_extended_sense));
+ 163 
+ 164         if (mp-&gt;ps) {
+ 165                 options |= MODE_SELECT_SP;
+ 166                 mp-&gt;ps = 0;
+ 167         } else {
+ 168                 options &amp;= ~MODE_SELECT_SP;
+ 169         }
+ 170 
+ 171         if (sip-&gt;si_cdblen == MODE_CMD_LEN_6) {
+ 172                 /* The following fields are reserved during mode select: */
+ 173                 headers-&gt;ms_hdr.g0.ms_header.length = 0;
+ 174                 headers-&gt;ms_hdr.g0.ms_header.device_specific = 0;
+ 175 
+ 176                 if (sip-&gt;si_sim)
+ 177                         result = simscsi_mode_select(sip-&gt;si_sim,
+ 178                             page_code, options, buf, buflen,
+ 179                             &amp;headers-&gt;ms_hdr.g0, &amp;sense, &amp;senselen);
+ 180                 else
+ 181                         result = uscsi_mode_select(sip-&gt;si_dsp-&gt;ds_fd,
+ 182                             page_code, options, buf, buflen,
+ 183                             &amp;headers-&gt;ms_hdr.g0, &amp;sense, &amp;senselen);
+ 184         } else {
+ 185                 /* The following fields are reserved during mode select: */
+ 186                 headers-&gt;ms_hdr.g1.ms_header.length = 0;
+ 187                 headers-&gt;ms_hdr.g1.ms_header.device_specific = 0;
+ 188 
+ 189                 if (sip-&gt;si_sim)
+ 190                         result = simscsi_mode_select_10(sip-&gt;si_sim,
+ 191                             page_code, options, buf, buflen,
+ 192                             &amp;headers-&gt;ms_hdr.g1, &amp;sense, &amp;senselen);
+ 193                 else
+ 194                         result = uscsi_mode_select_10(sip-&gt;si_dsp-&gt;ds_fd,
+ 195                             page_code, options, buf, buflen,
+ 196                             &amp;headers-&gt;ms_hdr.g1, &amp;sense, &amp;senselen);
+ 197         }
+ 198 
+ 199         if (result != 0)
+ 200                 scsi_translate_error(&amp;sense, skp, ascp, ascqp);
+ 201 
+ 202         return (result);
+ 203 }
+ 204 
+ 205 static int
+ 206 scsi_mode_sense(ds_scsi_info_t *sip, uchar_t page_code, uchar_t pc,
+ 207     void *buf, uint_t buflen, scsi_ms_hdrs_t *headers, uint_t *skp,
+ 208     uint_t *ascp, uint_t *ascqp)
+ 209 {
+ 210         int result;
+ 211         struct scsi_extended_sense sense;
+ 212         int senselen = sizeof (struct scsi_extended_sense);
+ 213 
+ 214         assert(sip-&gt;si_cdblen == MODE_CMD_LEN_6 ||
+ 215             sip-&gt;si_cdblen == MODE_CMD_LEN_10);
+ 216 
+ 217         bzero(&amp;sense, sizeof (struct scsi_extended_sense));
+ 218 
+ 219         bzero(headers, sizeof (scsi_ms_hdrs_t));
+ 220         headers-&gt;ms_length = sip-&gt;si_cdblen;
+ 221 
+ 222         if (sip-&gt;si_cdblen == MODE_CMD_LEN_6) {
+ 223                 if (sip-&gt;si_sim)
+ 224                         result = simscsi_mode_sense(sip-&gt;si_sim,
+ 225                             page_code, pc, buf, buflen, &amp;headers-&gt;ms_hdr.g0,
+ 226                             &amp;sense, &amp;senselen);
+ 227                 else
+ 228                         result = uscsi_mode_sense(sip-&gt;si_dsp-&gt;ds_fd, page_code,
+ 229                             pc, buf, buflen, &amp;headers-&gt;ms_hdr.g0, &amp;sense,
+ 230                             &amp;senselen);
+ 231         } else {
+ 232                 if (sip-&gt;si_sim)
+ 233                         result = simscsi_mode_sense_10(sip-&gt;si_sim,
+ 234                             page_code, pc, buf, buflen, &amp;headers-&gt;ms_hdr.g1,
+ 235                             &amp;sense, &amp;senselen);
+ 236                 else
+ 237                         result = uscsi_mode_sense_10(sip-&gt;si_dsp-&gt;ds_fd,
+ 238                             page_code, pc, buf, buflen, &amp;headers-&gt;ms_hdr.g1,
+ 239                             &amp;sense, &amp;senselen);
+ 240         }
+ 241 
+ 242         if (result != 0)
+ 243                 scsi_translate_error(&amp;sense, skp, ascp, ascqp);
+ 244 
+ 245         return (result);
+ 246 }
+ 247 
+ 248 static int
+ 249 scsi_request_sense(ds_scsi_info_t *sip, uint_t *skp, uint_t *ascp,
+ 250     uint_t *ascqp)
+ 251 {
+ 252         struct scsi_extended_sense sense, sensebuf;
+ 253         int senselen = sizeof (struct scsi_extended_sense);
+ 254         int sensebuflen = sizeof (struct scsi_extended_sense);
+ 255         int result;
+ 256 
+ 257         bzero(&amp;sense, sizeof (struct scsi_extended_sense));
+ 258         bzero(&amp;sensebuf, sizeof (struct scsi_extended_sense));
+ 259 
+ 260         if (sip-&gt;si_sim)
+ 261                 result = simscsi_request_sense(sip-&gt;si_sim,
+ 262                     (caddr_t)&amp;sensebuf, sensebuflen, &amp;sense, &amp;senselen);
+ 263         else
+ 264                 result = uscsi_request_sense(sip-&gt;si_dsp-&gt;ds_fd,
+ 265                     (caddr_t)&amp;sensebuf, sensebuflen, &amp;sense, &amp;senselen);
+ 266 
+ 267         if (result == 0)
+ 268                 scsi_translate_error(&amp;sensebuf, skp, ascp, ascqp);
+ 269         else
+ 270                 scsi_translate_error(&amp;sense, skp, ascp, ascqp);
+ 271 
+ 272         return (result);
+ 273 }
+ 274 
+ 275 static int
+ 276 scsi_log_sense(ds_scsi_info_t *sip, int page_code, int page_control,
+ 277     caddr_t page_data, int page_size, uint_t *skp, uint_t *ascp, uint_t *ascqp)
+ 278 {
+ 279         int result;
+ 280         struct scsi_extended_sense sense;
+ 281         int senselen = sizeof (struct scsi_extended_sense);
+ 282 
+ 283         if (sip-&gt;si_sim)
+ 284                 result = simscsi_log_sense(sip-&gt;si_sim,
+ 285                     page_code, page_control, page_data, page_size, &amp;sense,
+ 286                     &amp;senselen);
+ 287         else
+ 288                 result = uscsi_log_sense(sip-&gt;si_dsp-&gt;ds_fd,
+ 289                     page_code, page_control, page_data, page_size, &amp;sense,
+ 290                     &amp;senselen);
+ 291 
+ 292         if (result != 0)
+ 293                 scsi_translate_error(&amp;sense, skp, ascp, ascqp);
+ 294 
+ 295         return (result);
+ 296 }
+ 297 
+ 298 /*
+ 299  * Given a list of supported mode pages, determine if the given page is present.
+ 300  */
+ 301 static boolean_t
+ 302 mode_page_present(uchar_t *pgdata, uint_t pgdatalen, uchar_t pagecode)
+ 303 {
+ 304         uint_t i = 0;
+ 305         struct mode_page *pg;
+ 306         boolean_t found = B_FALSE;
+ 307 
+ 308         /*
+ 309          * The mode page list contains all mode pages supported by the device,
+ 310          * one after the other.
+ 311          */
+ 312         while (i &lt; pgdatalen) {
+ 313                 pg = (struct mode_page *)&amp;pgdata[i];
+ 314 
+ 315                 if (pg-&gt;code == pagecode) {
+ 316                         found = B_TRUE;
+ 317                         break;
+ 318                 }
+ 319 
+ 320                 i += MODESENSE_PAGE_LEN(pg);
+ 321         }
+ 322 
+ 323         return (found);
+ 324 }
+ 325 
+ 326 /*
+ 327  * Load mode pages and check that the appropriate pages are supported.
+ 328  *
+ 329  * As part of this process, we determine which form of the MODE SENSE / MODE
+ 330  * SELECT command to use (the 6-byte or 10-byte version) by executing a MODE
+ 331  * SENSE command for a page that should be implemented by the device.
+ 332  */
+ 333 static int
+ 334 load_modepages(ds_scsi_info_t *sip)
+ 335 {
+ 336         int allpages_buflen;
+ 337         uchar_t *allpages;
+ 338         scsi_ms_hdrs_t headers;
+ 339         int result;
+ 340         uint_t skey, asc, ascq;
+ 341         int datalength = 0;
+ 342         scsi_ms_header_t *smh = &amp;headers.ms_hdr.g0;
+ 343         scsi_ms_header_g1_t *smh_g1 = &amp;headers.ms_hdr.g1;
+ 344         nvlist_t *nvl;
+ 345 
+ 346         allpages_buflen = MAX_BUFLEN(scsi_ms_header_g1_t);
+ 347         if ((allpages = calloc(allpages_buflen, 1)) == NULL)
+ 348                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 349 
+ 350         bzero(&amp;headers, sizeof (headers));
+ 351 
+ 352         /*
+ 353          * Attempt a mode sense(6).  If that fails, try a mode sense(10)
+ 354          *
+ 355          * allpages is allocated to be of the maximum size for either a mode
+ 356          * sense(6) or mode sense(10) MODEPAGE_ALLPAGES response.
+ 357          *
+ 358          * Note that the length passed into uscsi_mode_sense should be set to
+ 359          * the maximum size of the parameter response, which in this case is
+ 360          * UCHAR_MAX - the size of the headers/block descriptors.
+ 361          */
+ 362         sip-&gt;si_cdblen = MODE_CMD_LEN_6;
+ 363         if ((result = scsi_mode_sense(sip, MODEPAGE_ALLPAGES, PC_CURRENT,
+ 364             (caddr_t)allpages, UCHAR_MAX - sizeof (scsi_ms_header_t),
+ 365             &amp;headers, &amp;skey, &amp;asc, &amp;ascq)) == 0) {
+ 366                 /*
+ 367                  * Compute the data length of the page that contains all mode
+ 368                  * sense pages.  This is a bit tricky because the format of the
+ 369                  * response from the lun is:
+ 370                  *
+ 371                  * header: &lt;length&gt; &lt;medium type byte&gt; &lt;dev specific byte&gt;
+ 372                  *         &lt;block descriptor length&gt;
+ 373                  *         [&lt;optional block descriptor&gt;]
+ 374                  * data:   [&lt;mode page data&gt; &lt;mode page data&gt; ...]
+ 375                  *
+ 376                  * Since the length field in the header describes the length of
+ 377                  * the entire response.  This includes the header, but NOT
+ 378                  * the length field itself, which is 1 or 2 bytes depending on
+ 379                  * which mode sense type (6- or 10- byte) is being executed.
+ 380                  *
+ 381                  * So, the data length equals the length value in the header
+ 382                  * plus 1 (because the length byte was not included in the
+ 383                  * length count), minus [[the sum of the length of the header
+ 384                  * and the length of the block descriptor]].
+ 385                  */
+ 386                 datalength = (smh-&gt;ms_header.length +
+ 387                     sizeof (smh-&gt;ms_header.length)) -
+ 388                     (sizeof (struct mode_header) +
+ 389                     smh-&gt;ms_header.bdesc_length);
+ 390         } else if (SCSI_INVALID_OPCODE(skey, asc, ascq)) {
+ 391                 /*
+ 392                  * Fallback and try the 10-byte version of the command.
+ 393                  */
+ 394                 sip-&gt;si_cdblen = MODE_CMD_LEN_10;
+ 395                 result = scsi_mode_sense(sip, MODEPAGE_ALLPAGES,
+ 396                     PC_CURRENT, (caddr_t)allpages, allpages_buflen,
+ 397                     &amp;headers, &amp;skey, &amp;asc, &amp;ascq);
+ 398 
+ 399                 if (result == 0) {
+ 400                         datalength = (BE_16(smh_g1-&gt;ms_header.length) +
+ 401                             sizeof (smh_g1-&gt;ms_header.length)) -
+ 402                             (sizeof (struct mode_header_g1) +
+ 403                             BE_16(smh_g1-&gt;ms_header.bdesc_length));
+ 404 
+ 405                 }
+ 406         }
+ 407 
+ 408         if (result == 0 &amp;&amp; datalength &gt;= 0) {
+ 409                 if (nvlist_add_int8(sip-&gt;si_dsp-&gt;ds_state, "command-length",
+ 410                     sip-&gt;si_cdblen == MODE_CMD_LEN_6 ? 6 : 10) != 0) {
+ 411                         free(allpages);
+ 412                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 413                 }
+ 414 
+ 415                 nvl = NULL;
+ 416                 if (nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0) != 0 ||
+ 417                     nvlist_add_nvlist(sip-&gt;si_dsp-&gt;ds_state, "modepages",
+ 418                     nvl) != 0) {
+ 419                         free(allpages);
+ 420                         nvlist_free(nvl);
+ 421                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 422                 }
+ 423 
+ 424                 nvlist_free(nvl);
+ 425                 result = nvlist_lookup_nvlist(sip-&gt;si_dsp-&gt;ds_state,
+ 426                     "modepages", &amp;sip-&gt;si_state_modepage);
+ 427                 assert(result == 0);
+ 428 
+ 429                 /*
+ 430                  * One of the sets of the commands (above) succeeded, so now
+ 431                  * look for the mode pages we need and record them appropriately
+ 432                  */
+ 433                 if (mode_page_present(allpages, datalength,
+ 434                     MODEPAGE_INFO_EXCPT)) {
+ 435 
+ 436                         nvl = NULL;
+ 437                         if (nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0) != 0 ||
+ 438                             nvlist_add_nvlist(sip-&gt;si_state_modepage,
+ 439                             "informational-exceptions", nvl) != 0) {
+ 440                                 free(allpages);
+ 441                                 nvlist_free(nvl);
+ 442                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 443                         }
+ 444                         nvlist_free(nvl);
+ 445                         sip-&gt;si_supp_mode |= MODEPAGE_SUPP_IEC;
+ 446                         result = nvlist_lookup_nvlist(sip-&gt;si_state_modepage,
+ 447                             "informational-exceptions", &amp;sip-&gt;si_state_iec);
+ 448                         assert(result == 0);
+ 449                 }
+ 450 
+ 451         } else {
+ 452                 /*
+ 453                  * If the device failed to respond to one of the basic commands,
+ 454                  * then assume it's not a SCSI device or otherwise doesn't
+ 455                  * support the necessary transport.
+ 456                  */
+ 457                 if (datalength &lt; 0)
+ 458                         dprintf("command returned invalid data length (%d)\n",
+ 459                             datalength);
+ 460                 else
+ 461                         dprintf("failed to load modepages (KEY=0x%x "
+ 462                             "ASC=0x%x ASCQ=0x%x)\n", skey, asc, ascq);
+ 463 
+ 464                 result = scsi_set_errno(sip, EDS_NO_TRANSPORT);
+ 465         }
+ 466 
+ 467         free(allpages);
+ 468         return (result);
+ 469 }
+ 470 
+ 471 /*
+ 472  * Verify a single logpage.  This will do some generic validation and then call
+ 473  * the logpage-specific function for further verification.
+ 474  */
+ 475 static int
+ 476 verify_logpage(ds_scsi_info_t *sip, logpage_validation_entry_t *lp)
+ 477 {
+ 478         scsi_log_header_t *lhp;
+ 479         struct scsi_extended_sense sense;
+ 480         int buflen;
+ 481         int log_length;
+ 482         int result = 0;
+ 483         uint_t kp, asc, ascq;
+ 484         nvlist_t *nvl;
+ 485 
+ 486         buflen = MAX_BUFLEN(scsi_log_header_t);
+ 487         if ((lhp = calloc(buflen, 1)) == NULL)
+ 488                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 489         bzero(&amp;sense, sizeof (struct scsi_extended_sense));
+ 490 
+ 491         nvl = NULL;
+ 492         if (nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0) != 0 ||
+ 493             nvlist_add_nvlist(sip-&gt;si_state_logpage, lp-&gt;ve_desc, nvl) != 0) {
+ 494                 nvlist_free(nvl);
+ 495                 free(lhp);
+ 496                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 497         }
+ 498         nvlist_free(nvl);
+ 499         result = nvlist_lookup_nvlist(sip-&gt;si_state_logpage, lp-&gt;ve_desc, &amp;nvl);
+ 500         assert(result == 0);
+ 501 
+ 502         result = scsi_log_sense(sip, lp-&gt;ve_code,
+ 503             PC_CUMULATIVE, (caddr_t)lhp, buflen, &amp;kp, &amp;asc, &amp;ascq);
+ 504 
+ 505         if (result == 0) {
+ 506                 log_length = BE_16(lhp-&gt;lh_length);
+ 507                 if (nvlist_add_uint16(nvl, "length", log_length) != 0) {
+ 508                         free(lhp);
+ 509                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 510                 }
+ 511 
+ 512                 if (lp-&gt;ve_validate(sip, (scsi_log_parameter_header_t *)
+ 513                     (((char *)lhp) + sizeof (scsi_log_header_t)),
+ 514                     log_length, nvl) != 0) {
+ 515                         free(lhp);
+ 516                         return (-1);
+ 517                 }
+ 518         } else {
+ 519                 dprintf("failed to load %s log page (KEY=0x%x "
+ 520                     "ASC=0x%x ASCQ=0x%x)\n", lp-&gt;ve_desc, kp, asc, ascq);
+ 521         }
+ 522 
+ 523         free(lhp);
+ 524         return (0);
+ 525 }
+ 526 
+ 527 /*
+ 528  * Load log pages and determine which pages are supported.
+ 529  */
+ 530 static int
+ 531 load_logpages(ds_scsi_info_t *sip)
+ 532 {
+ 533         int buflen;
+ 534         scsi_supported_log_pages_t *sp;
+ 535         struct scsi_extended_sense sense;
+ 536         int result;
+ 537         uint_t sk, asc, ascq;
+ 538         int i, j;
+ 539         nvlist_t *nvl;
+ 540 
+ 541         buflen = MAX_BUFLEN(scsi_log_header_t);
+ 542         if ((sp = calloc(buflen, 1)) == NULL)
+ 543                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 544 
+ 545         bzero(&amp;sense, sizeof (struct scsi_extended_sense));
+ 546 
+ 547         if ((result = scsi_log_sense(sip, LOGPAGE_SUPP_LIST,
+ 548             PC_CUMULATIVE, (caddr_t)sp, buflen, &amp;sk, &amp;asc, &amp;ascq)) == 0) {
+ 549                 int pagecount = BE_16(sp-&gt;slp_hdr.lh_length);
+ 550 
+ 551                 for (i = 0; i &lt; pagecount; i++) {
+ 552                         for (j = 0; j &lt; NLOG_VALIDATION; j++) {
+ 553                                 if (log_validation[j].ve_code ==
+ 554                                     sp-&gt;slp_pages[i])
+ 555                                         sip-&gt;si_supp_log |=
+ 556                                             log_validation[j].ve_supported;
+ 557                         }
+ 558                 }
+ 559         }
+ 560 
+ 561         free(sp);
+ 562         if (result == 0) {
+ 563                 nvl = NULL;
+ 564                 if (nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0) != 0 ||
+ 565                     nvlist_add_nvlist(sip-&gt;si_dsp-&gt;ds_state, "logpages",
+ 566                     nvl) != 0) {
+ 567                         nvlist_free(nvl);
+ 568                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 569                 }
+ 570 
+ 571                 nvlist_free(nvl);
+ 572                 result = nvlist_lookup_nvlist(sip-&gt;si_dsp-&gt;ds_state,
+ 573                     "logpages", &amp;sip-&gt;si_state_logpage);
+ 574                 assert(result == 0);
+ 575 
+ 576                 /*
+ 577                  * Validate the logpage contents.
+ 578                  */
+ 579                 for (i = 0; i &lt; NLOG_VALIDATION; i++) {
+ 580                         if ((sip-&gt;si_supp_log &amp;
+ 581                             log_validation[i].ve_supported) == 0)
+ 582                                 continue;
+ 583 
+ 584                         /*
+ 585                          * verify_logpage will clear the supported bit if
+ 586                          * verification fails.
+ 587                          */
+ 588                         if (verify_logpage(sip, &amp;log_validation[i]) != 0)
+ 589                                 return (-1);
+ 590                 }
+ 591 
+ 592         } else {
+ 593                 dprintf("failed to get log pages "
+ 594                     "(KEY=0x%x ASC=0x%x ASCq=0x%x)\n", sk, asc, ascq);
+ 595         }
+ 596 
+ 597         /*
+ 598          * We always return 0 here, even if the required log pages aren't
+ 599          * supported.
+ 600          */
+ 601         return (0);
+ 602 }
+ 603 
+ 604 /*
+ 605  * Verify that the IE log page is sane.  This log page is potentially chock-full
+ 606  * of vendor specific information that we do not know how to access.  All we can
+ 607  * do is check for the generic predictive failure bit.  If this log page is not
+ 608  * well-formed, then bail out.
+ 609  */
+ 610 static int
+ 611 logpage_ie_verify(ds_scsi_info_t *sip, scsi_log_parameter_header_t *lphp,
+ 612     int log_length, nvlist_t *nvl)
+ 613 {
+ 614         int i, plen = 0;
+ 615         boolean_t seen = B_FALSE;
+ 616         scsi_ie_log_param_t *iep =
+ 617             (scsi_ie_log_param_t *)lphp;
+ 618 
+ 619         for (i = 0; i &lt; log_length; i += plen) {
+ 620                 iep = (scsi_ie_log_param_t *)((char *)iep + plen);
+ 621 
+ 622                 if (BE_16(iep-&gt;ie_hdr.lph_param) == LOGPARAM_IE) {
+ 623                         if (nvlist_add_boolean_value(nvl, "general",
+ 624                             B_TRUE) != 0)
+ 625                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 626 
+ 627                         if (lphp-&gt;lph_length &lt; LOGPARAM_IE_MIN_LEN) {
+ 628                                 if (nvlist_add_uint8(nvl,
+ 629                                     "invalid-length", lphp-&gt;lph_length) != 0)
+ 630                                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 631                         } else {
+ 632                                 seen = B_TRUE;
+ 633                         }
+ 634                         break;
+ 635                 }
+ 636 
+ 637                 plen = iep-&gt;ie_hdr.lph_length +
+ 638                     sizeof (scsi_log_parameter_header_t);
+ 639         }
+ 640 
+ 641         if (!seen) {
+ 642                 sip-&gt;si_supp_log &amp;= ~LOGPAGE_SUPP_IE;
+ 643                 dprintf("IE logpage validation failed\n");
+ 644         }
+ 645 
+ 646         return (0);
+ 647 }
+ 648 
+ 649 /*
+ 650  * Verify the contents of the temperature log page.  The temperature log page
+ 651  * contains two log parameters: the current temperature, and (optionally) the
+ 652  * reference temperature.  For the verification phase, we check that the two
+ 653  * parameters we care about are well-formed.  If there is no reference
+ 654  * temperature, then we cannot use the page for monitoring purposes.
+ 655  */
+ 656 static int
+ 657 logpage_temp_verify(ds_scsi_info_t *sip,
+ 658     scsi_log_parameter_header_t *lphp, int log_length, nvlist_t *nvl)
+ 659 {
+ 660         int i, plen = 0;
+ 661         boolean_t has_reftemp = B_FALSE;
+ 662         boolean_t bad_length = B_FALSE;
+ 663         ushort_t param_code;
+ 664 
+ 665         for (i = 0; i &lt; log_length; i += plen) {
+ 666                 lphp = (scsi_log_parameter_header_t *)((char *)lphp + plen);
+ 667                 param_code = BE_16(lphp-&gt;lph_param);
+ 668 
+ 669                 switch (param_code) {
+ 670                 case LOGPARAM_TEMP_CURTEMP:
+ 671                         if (nvlist_add_boolean_value(nvl, "current-temperature",
+ 672                             B_TRUE) != 0)
+ 673                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 674                         if (lphp-&gt;lph_length != LOGPARAM_TEMP_LEN) {
+ 675                                 if (nvlist_add_uint8(nvl,
+ 676                                     "invalid-length", lphp-&gt;lph_length) != 0)
+ 677                                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 678                                 bad_length = B_TRUE;
+ 679                         }
+ 680                         break;
+ 681 
+ 682                 case LOGPARAM_TEMP_REFTEMP:
+ 683                         if (nvlist_add_boolean_value(nvl,
+ 684                             "reference-temperature", B_TRUE) != 0)
+ 685                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 686                         if (lphp-&gt;lph_length != LOGPARAM_TEMP_LEN) {
+ 687                                 if (nvlist_add_uint8(nvl,
+ 688                                     "invalid-length", lphp-&gt;lph_length) != 0)
+ 689                                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 690                                 bad_length = B_TRUE;
+ 691                         }
+ 692                         has_reftemp = B_TRUE;
+ 693                         break;
+ 694                 }
+ 695 
+ 696                 plen = lphp-&gt;lph_length +
+ 697                     sizeof (scsi_log_parameter_header_t);
+ 698         }
+ 699 
+ 700         if (bad_length || !has_reftemp) {
+ 701                 sip-&gt;si_supp_log &amp;= ~LOGPAGE_SUPP_TEMP;
+ 702                 dprintf("temperature logpage validation failed\n");
+ 703         }
+ 704 
+ 705         return (0);
+ 706 }
+ 707 
+ 708 /*
+ 709  * Verify the contents of the self test log page.  The log supports a maximum of
+ 710  * 20 entries, where each entry's parameter code is its index in the log.  We
+ 711  * check that the parameter codes fall within this range, and that the size of
+ 712  * each page is what we expect.  It's perfectly acceptable for there to be no
+ 713  * entries in this log, so we must also be sure to validate the contents as part
+ 714  * of the analysis phase.
+ 715  */
+ 716 static int
+ 717 logpage_selftest_verify(ds_scsi_info_t *sip,
+ 718     scsi_log_parameter_header_t *lphp, int log_length, nvlist_t *nvl)
+ 719 {
+ 720         int i, plen = 0;
+ 721         boolean_t bad = B_FALSE;
+ 722         int entries = 0;
+ 723         ushort_t param_code;
+ 724 
+ 725         for (i = 0; i &lt; log_length; i += plen, entries++) {
+ 726                 lphp = (scsi_log_parameter_header_t *)((char *)lphp + plen);
+ 727                 param_code = BE_16(lphp-&gt;lph_param);
+ 728 
+ 729                 if (param_code &lt; LOGPAGE_SELFTEST_MIN_PARAM_CODE ||
+ 730                     param_code &gt; LOGPAGE_SELFTEST_MAX_PARAM_CODE) {
+ 731                         if (nvlist_add_uint16(nvl, "invalid-param-code",
+ 732                             param_code) != 0)
+ 733                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 734                         bad = B_TRUE;
+ 735                         break;
+ 736                 }
+ 737 
+ 738                 if (lphp-&gt;lph_length != LOGPAGE_SELFTEST_PARAM_LEN) {
+ 739                         if (nvlist_add_uint8(nvl, "invalid-length",
+ 740                             lphp-&gt;lph_length) != 0)
+ 741                                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 742                         bad = B_TRUE;
+ 743                         break;
+ 744 
+ 745                 }
+ 746 
+ 747                 plen = lphp-&gt;lph_length +
+ 748                     sizeof (scsi_log_parameter_header_t);
+ 749         }
+ 750 
+ 751         if (bad) {
+ 752                 sip-&gt;si_supp_log &amp;= ~LOGPAGE_SUPP_SELFTEST;
+ 753                 dprintf("selftest logpage validation failed\n");
+ 754         }
+ 755 
+ 756         return (0);
+ 757 }
+ 758 
+ 759 /*
+<a name="6" id="anc6"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 760  * Load the current IE mode pages
+ 761  */
+ 762 static int
+ 763 load_ie_modepage(ds_scsi_info_t *sip)
+ 764 {
+ 765         struct scsi_ms_hdrs junk_hdrs;
+ 766         int result;
+ 767         uint_t skey, asc, ascq;
+ 768 
+ 769         if (!(sip-&gt;si_supp_mode &amp; MODEPAGE_SUPP_IEC))
+ 770                 return (0);
+ 771 
+ 772         bzero(&amp;sip-&gt;si_iec_current, sizeof (sip-&gt;si_iec_current));
+ 773         bzero(&amp;sip-&gt;si_iec_changeable, sizeof (sip-&gt;si_iec_changeable));
+ 774 
+ 775         if ((result = scsi_mode_sense(sip,
+ 776             MODEPAGE_INFO_EXCPT, PC_CURRENT, &amp;sip-&gt;si_iec_current,
+ 777             MODEPAGE_INFO_EXCPT_LEN, &amp;sip-&gt;si_hdrs, &amp;skey, &amp;asc,
+ 778             &amp;ascq)) == 0) {
+ 779                 result = scsi_mode_sense(sip,
+ 780                     MODEPAGE_INFO_EXCPT, PC_CHANGEABLE,
+ 781                     &amp;sip-&gt;si_iec_changeable,
+ 782                     MODEPAGE_INFO_EXCPT_LEN, &amp;junk_hdrs, &amp;skey, &amp;asc, &amp;ascq);
+ 783         }
+ 784 
+ 785         if (result != 0) {
+ 786                 dprintf("failed to get IEC modepage (KEY=0x%x "
+ 787                     "ASC=0x%x ASCQ=0x%x)", skey, asc, ascq);
+ 788                 sip-&gt;si_supp_mode &amp;= ~MODEPAGE_SUPP_IEC;
+ 789         } else  {
+ 790                 if (nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 791                     "dexcpt", sip-&gt;si_iec_current.ie_dexcpt) != 0 ||
+ 792                     nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 793                     "logerr", sip-&gt;si_iec_current.ie_logerr) != 0 ||
+ 794                     nvlist_add_uint8(sip-&gt;si_state_iec,
+ 795                     "mrie", sip-&gt;si_iec_current.ie_mrie) != 0 ||
+ 796                     nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 797                     "test", sip-&gt;si_iec_current.ie_test) != 0 ||
+ 798                     nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 799                     "ewasc", sip-&gt;si_iec_current.ie_ewasc) != 0 ||
+ 800                     nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 801                     "perf", sip-&gt;si_iec_current.ie_perf) != 0 ||
+ 802                     nvlist_add_boolean_value(sip-&gt;si_state_iec,
+ 803                     "ebf", sip-&gt;si_iec_current.ie_ebf) != 0 ||
+ 804                     nvlist_add_uint32(sip-&gt;si_state_iec,
+ 805                     "interval-timer",
+ 806                     BE_32(sip-&gt;si_iec_current.ie_interval_timer)) != 0 ||
+ 807                     nvlist_add_uint32(sip-&gt;si_state_iec,
+ 808                     "report-count",
+ 809                     BE_32(sip-&gt;si_iec_current.ie_report_count)) != 0)
+ 810                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 811         }
+ 812 
+ 813         return (0);
+ 814 }
+ 815 
+ 816 /*
+ 817  * Enable IE reporting.  We prefer the following settings:
+ 818  *
+ 819  * (1) DEXCPT = 0
+ 820  * (3) MRIE = 6 (IE_REPORT_ON_REQUEST)
+ 821  * (4) EWASC = 1
+ 822  * (6) REPORT COUNT = 0x00000001
+ 823  * (7) LOGERR = 1
+ 824  *
+ 825  * However, not all drives support changing these values, and the current state
+ 826  * may be useful enough as-is.  For example, some drives support IE logging, but
+ 827  * don't support changing the MRIE.  In this case, we can still use the
+ 828  * information provided by the log page.
+ 829  */
+ 830 static int
+ 831 scsi_enable_ie(ds_scsi_info_t *sip, boolean_t *changed)
+ 832 {
+ 833         scsi_ie_page_t new_iec_page;
+ 834         scsi_ms_hdrs_t hdrs;
+ 835         uint_t skey, asc, ascq;
+ 836 
+ 837         if (!(sip-&gt;si_supp_mode &amp; MODEPAGE_SUPP_IEC))
+ 838                 return (0);
+ 839 
+ 840         bzero(&amp;new_iec_page, sizeof (new_iec_page));
+ 841         bzero(&amp;hdrs, sizeof (hdrs));
+ 842 
+ 843         (void) memcpy(&amp;new_iec_page, &amp;sip-&gt;si_iec_current,
+ 844             sizeof (new_iec_page));
+ 845 
+ 846         if (IEC_IE_CHANGEABLE(sip-&gt;si_iec_changeable))
+ 847                 new_iec_page.ie_dexcpt = 0;
+ 848 
+ 849         if (IEC_MRIE_CHANGEABLE(sip-&gt;si_iec_changeable))
+ 850                 new_iec_page.ie_mrie = IE_REPORT_ON_REQUEST;
+ 851 
+ 852         /*
+ 853          * We only want to enable warning reporting if we are able to change the
+ 854          * mrie to report on request.  Otherwise, we risk unnecessarily
+ 855          * interrupting normal SCSI commands with a CHECK CONDITION code.
+ 856          */
+ 857         if (IEC_EWASC_CHANGEABLE(sip-&gt;si_iec_changeable)) {
+ 858                 if (new_iec_page.ie_mrie == IE_REPORT_ON_REQUEST)
+ 859                         new_iec_page.ie_ewasc = 1;
+ 860                 else
+ 861                         new_iec_page.ie_ewasc = 0;
+ 862         }
+ 863 
+ 864         if (IEC_RPTCNT_CHANGEABLE(sip-&gt;si_iec_changeable))
+ 865                 new_iec_page.ie_report_count = BE_32(1);
+ 866 
+ 867         if (IEC_LOGERR_CHANGEABLE(sip-&gt;si_iec_changeable))
+ 868                 new_iec_page.ie_logerr = 1;
+ 869 
+ 870         /*
+ 871          * Now compare the new mode page with the existing one.
+ 872          * if there's no difference, there's no need for a mode select
+ 873          */
+ 874         if (memcmp(&amp;new_iec_page, &amp;sip-&gt;si_iec_current,
+ 875             MODEPAGE_INFO_EXCPT_LEN) == 0) {
+ 876                 *changed = B_FALSE;
+ 877         } else {
+ 878                 (void) memcpy(&amp;hdrs, &amp;sip-&gt;si_hdrs, sizeof (sip-&gt;si_hdrs));
+ 879 
+ 880                 if (scsi_mode_select(sip,
+ 881                     MODEPAGE_INFO_EXCPT, MODE_SELECT_PF, &amp;new_iec_page,
+ 882                     MODEPAGE_INFO_EXCPT_LEN, &amp;hdrs, &amp;skey, &amp;asc, &amp;ascq) == 0) {
+ 883                         *changed = B_TRUE;
+ 884                 } else {
+ 885                         dprintf("failed to enable IE (KEY=0x%x "
+ 886                             "ASC=0x%x ASCQ=0x%x)\n", skey, asc, ascq);
+ 887                         *changed = B_FALSE;
+ 888                 }
+ 889         }
+ 890 
+ 891         if (nvlist_add_boolean_value(sip-&gt;si_state_iec, "changed",
+ 892             *changed) != 0)
+ 893                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 894 
+ 895         return (0);
+ 896 }
+ 897 
+ 898 /*
+ 899  * Clear the GLTSD bit, indicating log pages should be saved to non-volatile
+ 900  * storage.
+ 901  */
+ 902 static int
+ 903 clear_gltsd(ds_scsi_info_t *sip)
+ 904 {
+ 905         scsi_ms_hdrs_t hdrs, junk_hdrs;
+ 906         struct mode_control_scsi3 control_pg_cur, control_pg_chg;
+ 907         int result;
+ 908         uint_t skey, asc, ascq;
+ 909 
+ 910         bzero(&amp;hdrs, sizeof (hdrs));
+ 911         bzero(&amp;control_pg_cur, sizeof (control_pg_cur));
+ 912         bzero(&amp;control_pg_chg, sizeof (control_pg_chg));
+ 913 
+ 914         result = scsi_mode_sense(sip,
+ 915             MODEPAGE_CTRL_MODE, PC_CURRENT, &amp;control_pg_cur,
+ 916             MODEPAGE_CTRL_MODE_LEN, &amp;hdrs, &amp;skey, &amp;asc, &amp;ascq);
+ 917 
+ 918         if (result != 0) {
+ 919                 dprintf("failed to read Control mode page (KEY=0x%x "
+ 920                     "ASC=0x%x ASCQ=0x%x)\n", skey, asc, ascq);
+ 921         } else if (control_pg_cur.mode_page.length !=
+ 922             PAGELENGTH_MODE_CONTROL_SCSI3) {
+ 923                 dprintf("SCSI-3 control mode page not supported\n");
+ 924         } else if ((result = scsi_mode_sense(sip,
+ 925             MODEPAGE_CTRL_MODE, PC_CHANGEABLE, &amp;control_pg_chg,
+ 926             MODEPAGE_CTRL_MODE_LEN, &amp;junk_hdrs, &amp;skey, &amp;asc, &amp;ascq))
+ 927             != 0) {
+ 928                 dprintf("failed to read changeable Control mode page (KEY=0x%x "
+ 929                     "ASC=0x%x ASCQ=0x%x)\n", skey, asc, ascq);
+ 930         } else if (control_pg_cur.gltsd &amp;&amp; !GLTSD_CHANGEABLE(control_pg_chg)) {
+ 931                 dprintf("gltsd is set and not changeable\n");
+ 932                 if (nvlist_add_boolean_value(sip-&gt;si_dsp-&gt;ds_state,
+ 933                     "gltsd", control_pg_cur.gltsd) != 0)
+ 934                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 935         } else if (control_pg_cur.gltsd) {
+ 936                 control_pg_cur.gltsd = 0;
+ 937                 result = scsi_mode_select(sip,
+ 938                     MODEPAGE_CTRL_MODE, MODE_SELECT_PF, &amp;control_pg_cur,
+ 939                     MODEPAGE_CTRL_MODE_LEN, &amp;hdrs, &amp;skey, &amp;asc, &amp;ascq);
+ 940                 if (result != 0)
+ 941                         dprintf("failed to enable GLTSD (KEY=0x%x "
+ 942                             "ASC=0x%x ASCQ=0x%x\n", skey, asc, ascq);
+ 943                 if (nvlist_add_boolean_value(sip-&gt;si_dsp-&gt;ds_state,
+ 944                     "gltsd", control_pg_cur.gltsd) != 0)
+ 945                         return (scsi_set_errno(sip, EDS_NOMEM));
+ 946         }
+ 947 
+ 948         return (0);
+ 949 }
+ 950 
+ 951 /*
+ 952  * Fetch the contents of the logpage, and then call the logpage-specific
+ 953  * analysis function.  The analysis function is responsible for detecting any
+ 954  * faults and filling in the details.
+ 955  */
+ 956 static int
+ 957 analyze_one_logpage(ds_scsi_info_t *sip, logpage_validation_entry_t *entry)
+ 958 {
+ 959         scsi_log_header_t *lhp;
+ 960         scsi_log_parameter_header_t *lphp;
+ 961         int buflen;
+ 962         int log_length;
+ 963         uint_t skey, asc, ascq;
+ 964         int result;
+ 965 
+ 966         buflen = MAX_BUFLEN(scsi_log_header_t);
+ 967         if ((lhp = calloc(buflen, 1)) == NULL)
+ 968                 return (scsi_set_errno(sip, EDS_NOMEM));
+ 969 
+ 970         result = scsi_log_sense(sip, entry-&gt;ve_code,
+ 971             PC_CUMULATIVE, (caddr_t)lhp, buflen, &amp;skey, &amp;asc, &amp;ascq);
+ 972 
+ 973         if (result == 0) {
+ 974                 log_length = BE_16(lhp-&gt;lh_length);
+ 975                 lphp = (scsi_log_parameter_header_t *)(((uchar_t *)lhp) +
+ 976                     sizeof (scsi_log_header_t));
+ 977 
+ 978                 result = entry-&gt;ve_analyze(sip, lphp, log_length);
+ 979         } else {
+ 980                 result = scsi_set_errno(sip, EDS_IO);
+ 981         }
+ 982 
+ 983         free(lhp);
+ 984         return (result);
+ 985 }
+ 986 
+ 987 /*
+ 988  * Analyze the IE logpage.  If we find an IE log record with a non-zero 'asc',
+ 989  * then we have a fault.
+ 990  */
+ 991 static int
+ 992 logpage_ie_analyze(ds_scsi_info_t *sip, scsi_log_parameter_header_t *lphp,
+ 993     int log_length)
+ 994 {
+ 995         int i, plen = 0;
+ 996         scsi_ie_log_param_t *iep = (scsi_ie_log_param_t *)lphp;
+ 997         nvlist_t *nvl;
+ 998 
+ 999         assert(sip-&gt;si_dsp-&gt;ds_predfail == NULL);
+1000         if (nvlist_alloc(&amp;sip-&gt;si_dsp-&gt;ds_predfail, NV_UNIQUE_NAME, 0) != 0)
+1001                 return (scsi_set_errno(sip, EDS_NOMEM));
+1002         nvl = sip-&gt;si_dsp-&gt;ds_predfail;
+1003 
+1004         for (i = 0; i &lt; log_length; i += plen) {
+1005                 iep = (scsi_ie_log_param_t *)((char *)iep + plen);
+1006 
+1007                 /*
+1008                  * Even though we validated the length during the initial phase,
+1009                  * never trust the device.
+1010                  */
+1011                 if (BE_16(iep-&gt;ie_hdr.lph_param) == LOGPARAM_IE &amp;&amp;
+1012                     iep-&gt;ie_hdr.lph_length &gt;= LOGPARAM_IE_MIN_LEN) {
+1013                         if (nvlist_add_uint8(nvl, FM_EREPORT_PAYLOAD_SCSI_ASC,
+1014                             iep-&gt;ie_asc) != 0 ||
+1015                             nvlist_add_uint8(nvl, FM_EREPORT_PAYLOAD_SCSI_ASCQ,
+1016                             iep-&gt;ie_ascq) != 0)
+1017                                 return (scsi_set_errno(sip, EDS_NOMEM));
+1018 
+1019                         if (iep-&gt;ie_asc != 0)
+1020                                 sip-&gt;si_dsp-&gt;ds_faults |=
+1021                                     DS_FAULT_PREDFAIL;
+1022                         break;
+1023                 }
+1024                 plen = iep-&gt;ie_hdr.lph_length +
+1025                     sizeof (scsi_log_parameter_header_t);
+1026         }
+1027 
+1028         return (0);
+1029 }
+1030 
+1031 static int
+1032 logpage_temp_analyze(ds_scsi_info_t *sip, scsi_log_parameter_header_t *lphp,
+1033     int log_length)
+1034 {
+1035         int i, plen = 0;
+1036         uint8_t reftemp, curtemp;
+1037         ushort_t param_code;
+1038         scsi_temp_log_param_t *temp;
+1039         nvlist_t *nvl;
+1040 
+1041         assert(sip-&gt;si_dsp-&gt;ds_overtemp == NULL);
+1042         if (nvlist_alloc(&amp;sip-&gt;si_dsp-&gt;ds_overtemp, NV_UNIQUE_NAME, 0) != 0)
+1043                 return (scsi_set_errno(sip, EDS_NOMEM));
+1044         nvl = sip-&gt;si_dsp-&gt;ds_overtemp;
+1045 
+1046         reftemp = curtemp = INVALID_TEMPERATURE;
+1047         for (i = 0; i &lt; log_length; i += plen) {
+1048                 lphp = (scsi_log_parameter_header_t *)((char *)lphp + plen);
+1049                 param_code = BE_16(lphp-&gt;lph_param);
+1050                 temp = (scsi_temp_log_param_t *)lphp;
+1051 
+1052                 switch (param_code) {
+1053                 case LOGPARAM_TEMP_CURTEMP:
+1054                         if (lphp-&gt;lph_length != LOGPARAM_TEMP_LEN)
+1055                                 break;
+1056 
+1057                         if (nvlist_add_uint8(nvl,
+1058                             FM_EREPORT_PAYLOAD_SCSI_CURTEMP,
+1059                             temp-&gt;t_temp) != 0)
+1060                                 return (scsi_set_errno(sip, EDS_NOMEM));
+1061                         curtemp = temp-&gt;t_temp;
+1062                         break;
+1063 
+1064                 case LOGPARAM_TEMP_REFTEMP:
+1065                         if (lphp-&gt;lph_length != LOGPARAM_TEMP_LEN)
+1066                                 break;
+1067 
+1068                         if (nvlist_add_uint8(nvl,
+1069                             FM_EREPORT_PAYLOAD_SCSI_THRESHTEMP,
+1070                             temp-&gt;t_temp) != 0)
+1071                                 return (scsi_set_errno(sip, EDS_NOMEM));
+1072                         reftemp = temp-&gt;t_temp;
+1073                         break;
+1074                 }
+1075 
+1076                 plen = lphp-&gt;lph_length +
+1077                     sizeof (scsi_log_parameter_header_t);
+1078         }
+1079 
+1080         if (reftemp != INVALID_TEMPERATURE &amp;&amp; curtemp != INVALID_TEMPERATURE &amp;&amp;
+1081             curtemp &gt; reftemp)
+1082                 sip-&gt;si_dsp-&gt;ds_faults |= DS_FAULT_OVERTEMP;
+1083 
+1084         return (0);
+1085 }
+1086 
+1087 static int
+1088 logpage_selftest_analyze(ds_scsi_info_t *sip, scsi_log_parameter_header_t *lphp,
+1089     int log_length)
+1090 {
+1091         int i, plen = 0;
+1092         int entries = 0;
+1093         ushort_t param_code;
+1094         scsi_selftest_log_param_t *stp;
+1095         nvlist_t *nvl;
+1096 
+1097         assert(sip-&gt;si_dsp-&gt;ds_testfail == NULL);
+1098         if (nvlist_alloc(&amp;sip-&gt;si_dsp-&gt;ds_testfail, NV_UNIQUE_NAME, 0) != 0)
+1099                 return (scsi_set_errno(sip, EDS_NOMEM));
+1100         nvl = sip-&gt;si_dsp-&gt;ds_testfail;
+1101 
+1102         for (i = 0; i &lt; log_length; i += plen, entries++) {
+1103                 lphp = (scsi_log_parameter_header_t *)((char *)lphp + plen);
+1104                 param_code = BE_16(lphp-&gt;lph_param);
+1105                 stp = (scsi_selftest_log_param_t *)lphp;
+1106 
+1107                 if (param_code &gt;= LOGPAGE_SELFTEST_MIN_PARAM_CODE &amp;&amp;
+1108                     param_code &lt;= LOGPAGE_SELFTEST_MAX_PARAM_CODE &amp;&amp;
+1109                     lphp-&gt;lph_length &gt;= LOGPAGE_SELFTEST_PARAM_LEN) {
+1110                         /*
+1111                          * We always log the last result, or the result of the
+1112                          * last completed test.
+1113                          */
+1114                         if ((param_code == 1 ||
+1115                             SELFTEST_COMPLETE(stp-&gt;st_results))) {
+1116                                 if (nvlist_add_uint8(nvl,
+1117                                     FM_EREPORT_PAYLOAD_SCSI_RESULTCODE,
+1118                                     stp-&gt;st_results) != 0 ||
+1119                                     nvlist_add_uint16(nvl,
+1120                                     FM_EREPORT_PAYLOAD_SCSI_TIMESTAMP,
+1121                                     BE_16(stp-&gt;st_timestamp)) != 0 ||
+1122                                     nvlist_add_uint8(nvl,
+1123                                     FM_EREPORT_PAYLOAD_SCSI_SEGMENT,
+1124                                     stp-&gt;st_number) != 0 ||
+1125                                     nvlist_add_uint64(nvl,
+1126                                     FM_EREPORT_PAYLOAD_SCSI_ADDRESS,
+1127                                     BE_64(stp-&gt;st_lba)) != 0)
+1128                                         return (scsi_set_errno(sip,
+1129                                             EDS_NOMEM));
+1130 
+1131                                 if (SELFTEST_COMPLETE(stp-&gt;st_results)) {
+1132                                         if (stp-&gt;st_results != SELFTEST_OK)
+1133                                                 sip-&gt;si_dsp-&gt;ds_faults |=
+1134                                                     DS_FAULT_TESTFAIL;
+1135                                         return (0);
+1136                                 }
+1137                         }
+1138                 }
+1139 
+1140                 plen = lphp-&gt;lph_length +
+1141                     sizeof (scsi_log_parameter_header_t);
+1142         }
+1143 
+1144         return (0);
+1145 }
+1146 
+<a name="7" id="anc7"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1147 /*
+1148  * Analyze the IE mode sense page explicitly.  This is only needed if the IE log
+1149  * page is not supported.
+1150  */
+1151 static int
+1152 analyze_ie_sense(ds_scsi_info_t *sip)
+1153 {
+1154         uint_t skey, asc, ascq;
+1155         nvlist_t *nvl;
+1156 
+1157         /*
+1158          * Don't bother checking if we weren't able to set our MRIE correctly.
+1159          */
+1160         if (sip-&gt;si_iec_current.ie_mrie != IE_REPORT_ON_REQUEST)
+1161                 return (0);
+1162 
+1163         if (scsi_request_sense(sip, &amp;skey, &amp;asc, &amp;ascq) != 0) {
+1164                 dprintf("failed to request IE page (KEY=0x%x ASC=0x%x "
+1165                     "ASCQ=0x%x)\n", skey, asc, ascq);
+1166                 return (scsi_set_errno(sip, EDS_IO));
+1167         } else if (skey == KEY_NO_SENSE) {
+1168                 assert(sip-&gt;si_dsp-&gt;ds_predfail == NULL);
+1169                 if (nvlist_alloc(&amp;sip-&gt;si_dsp-&gt;ds_predfail,
+1170                     NV_UNIQUE_NAME, 0) != 0)
+1171                         return (scsi_set_errno(sip, EDS_NOMEM));
+1172                 nvl = sip-&gt;si_dsp-&gt;ds_predfail;
+1173 
+1174                 if (nvlist_add_uint8(nvl,
+1175                     FM_EREPORT_PAYLOAD_SCSI_ASC, asc) != 0 ||
+1176                     nvlist_add_uint8(nvl,
+1177                     FM_EREPORT_PAYLOAD_SCSI_ASCQ, ascq) != 0) {
+1178                         nvlist_free(nvl);
+1179                         return (scsi_set_errno(sip, EDS_NOMEM));
+1180                 }
+1181 
+1182                 if (asc != 0)
+1183                         sip-&gt;si_dsp-&gt;ds_faults |= DS_FAULT_PREDFAIL;
+1184         }
+1185 
+1186         return (0);
+1187 }
+1188 
+1189 /*
+1190  * Clean up the scsi-specific information structure.
+1191  */
+1192 static void
+1193 ds_scsi_close(void *arg)
+1194 {
+1195         ds_scsi_info_t *sip = arg;
+1196         if (sip-&gt;si_sim)
+1197                 (void) dlclose(sip-&gt;si_sim);
+1198 
+1199         free(sip);
+1200 }
+1201 
+1202 /*
+1203  * Initialize a single disk.  Initialization consists of:
+1204  *
+1205  * 1. Check to see if the IE mechanism is enabled via MODE SENSE for the IE
+1206  *    Control page (page 0x1C).
+1207  *
+1208  * 2. If the IE page is available, try to set the following parameters:
+1209  *
+1210  *      DEXCPT          0       Enable exceptions
+1211  *      MRIE            6       Only report IE information on request
+1212  *      EWASC           1       Enable warning reporting
+1213  *      REPORT COUNT    1       Only report an IE exception once
+1214  *      LOGERR          1       Enable logging of errors
+1215  *
+1216  *    The remaining fields are left as-is, preserving the current values.  If we
+1217  *    cannot set some of these fields, then we do our best.  Some drives may
+1218  *    have a static configuration which still allows for some monitoring.
+1219  *
+1220  * 3. Check to see if the IE log page (page 0x2F) is supported by issuing a
+1221  *    LOG SENSE command.
+1222  *
+1223  * 4. Check to see if the self-test log page (page 0x10) is supported.
+1224  *
+1225  * 5. Check to see if the temperature log page (page 0x0D) is supported, and
+1226  *    contains a reference temperature.
+1227  *
+1228  * 6. Clear the GLTSD bit in control mode page 0xA.  This will allow the drive
+1229  *    to save each of the log pages described above to nonvolatile storage.
+1230  *    This is essential if the drive is to remember its failures across
+1231  *    loss of power.
+1232  */
+1233 static void *
+1234 ds_scsi_open_common(disk_status_t *dsp, ds_scsi_info_t *sip)
+1235 {
+1236         boolean_t changed;
+1237 
+1238         sip-&gt;si_dsp = dsp;
+1239 
+1240         /* Load and validate mode pages */
+1241         if (load_modepages(sip) != 0) {
+1242                 ds_scsi_close(sip);
+1243                 return (NULL);
+1244         }
+1245 
+1246         /* Load and validate log pages */
+1247         if (load_logpages(sip) != 0) {
+1248                 ds_scsi_close(sip);
+1249                 return (NULL);
+1250         }
+1251 
+1252         /* Load IE state */
+1253         if (load_ie_modepage(sip) != 0 ||
+1254             scsi_enable_ie(sip, &amp;changed) != 0 ||
+1255             (changed &amp;&amp; load_ie_modepage(sip) != 0)) {
+1256                 ds_scsi_close(sip);
+1257                 return (NULL);
+1258         }
+1259 
+1260         /* Clear the GLTSD bit in the control page */
+1261         if (sip-&gt;si_supp_log != 0 &amp;&amp; clear_gltsd(sip) != 0) {
+1262                 ds_scsi_close(sip);
+1263                 return (NULL);
+1264         }
+1265 
+1266         return (sip);
+1267 }
+1268 
+1269 static void *
+1270 ds_scsi_open_uscsi(disk_status_t *dsp)
+1271 {
+1272         ds_scsi_info_t *sip;
+1273 
+1274         if ((sip = calloc(sizeof (ds_scsi_info_t), 1)) == NULL) {
+1275                 (void) ds_set_errno(dsp, EDS_NOMEM);
+1276                 return (NULL);
+1277         }
+1278 
+1279         return (ds_scsi_open_common(dsp, sip));
+1280 }
+1281 
+1282 static void *
+1283 ds_scsi_open_sim(disk_status_t *dsp)
+1284 {
+1285         ds_scsi_info_t *sip;
+1286 
+1287         if ((sip = calloc(sizeof (ds_scsi_info_t), 1)) == NULL) {
+1288                 (void) ds_set_errno(dsp, EDS_NOMEM);
+1289                 return (NULL);
+1290         }
+1291 
+1292         if ((sip-&gt;si_sim = dlopen(dsp-&gt;ds_path, RTLD_LAZY)) == NULL) {
+1293                 (void) ds_set_errno(dsp, EDS_NO_TRANSPORT);
+1294                 free(sip);
+1295                 return (NULL);
+1296         }
+1297 
+1298         return (ds_scsi_open_common(dsp, sip));
+1299 }
+1300 
+1301 
+1302 /*
+1303  * Scan for any faults.  The following steps are performed:
+1304  *
+1305  * 1. If the temperature log page is supported, check the current temperature
+1306  *    and threshold.  If the current temperature exceeds the threshold, report
+1307  *    and overtemp fault.
+1308  *
+1309  * 2. If the selftest log page is supported, check to the last completed self
+1310  *    test.  If the last completed test resulted in failure, report a selftest
+1311  *    fault.
+1312  *
+1313  * 3. If the IE log page is supported, check to see if failure is predicted.  If
+1314  *    so, indicate a predictive failure fault.
+1315  *
+1316  * 4. If the IE log page is not supported, but the mode page supports report on
+1317  *    request mode, then issue a REQUEST SENSE for the mode page.  Indicate a
+1318  *    predictive failure fault if necessary.
+1319  */
+1320 static int
+1321 ds_scsi_scan(void *arg)
+1322 {
+1323         ds_scsi_info_t *sip = arg;
+1324         int i;
+1325 
+1326         for (i = 0; i &lt; NLOG_VALIDATION; i++) {
+1327                 if ((sip-&gt;si_supp_log &amp; log_validation[i].ve_supported) == 0)
+1328                         continue;
+1329 
+1330                 if (analyze_one_logpage(sip, &amp;log_validation[i]) != 0)
+1331                         return (-1);
+1332         }
+1333 
+1334         if (!(sip-&gt;si_supp_log &amp; LOGPAGE_SUPP_IE) &amp;&amp;
+1335             (sip-&gt;si_supp_mode &amp; MODEPAGE_SUPP_IEC) &amp;&amp;
+1336             analyze_ie_sense(sip) != 0)
+1337                 return (-1);
+1338 
+1339         return (0);
+1340 }
+1341 
+1342 ds_transport_t ds_scsi_uscsi_transport = {
+1343         ds_scsi_open_uscsi,
+1344         ds_scsi_close,
+1345         ds_scsi_scan
+1346 };
+1347 
+1348 ds_transport_t ds_scsi_sim_transport = {
+1349         ds_scsi_open_sim,
+1350         ds_scsi_close,
+1351         ds_scsi_scan
+1352 };
+<a name="8" id="anc8"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre><form name="eof"><input name="value" value="8" type="hidden"></input></form></body></html>

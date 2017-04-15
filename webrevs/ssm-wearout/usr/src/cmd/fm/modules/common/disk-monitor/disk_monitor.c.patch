@@ -1,0 +1,21 @@
+--- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:29:58 2017
++++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c	Sat Apr 15 12:29:58 2017
+@@ -22,6 +22,7 @@
+ /*
+  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+  */
+ 
+ /*
+@@ -158,6 +159,10 @@
+ 	    DISK_ERROR_CLASS "." FM_FAULT_DISK_TESTFAIL))
+ 		action_prop = DISK_PROP_STFAILACTION;
+ 
++	if (fmd_nvl_class_match(hdl, nvl,
++	    DISK_ERROR_CLASS "." FM_FAULT_SSM_WEAROUT))
++		action_prop = DISK_PROP_SSMWEAROUTACTION;
++
+ 	dm_fault_indicator_set(diskp, INDICATOR_ON);
+ 
+ 	if (action_prop != NULL &&

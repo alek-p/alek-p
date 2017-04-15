@@ -1,0 +1,244 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Cdiff usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c</title>
+</head>
+<body id="SUNWwebrev">
+        <a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+        <pre>
+<hr></hr><span class="oldmarker">*** 19,32 ****</span>
+   * CDDL HEADER END
+   */
+  /*
+   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+   * Use is subject to license terms.
+   */
+  
+<span class="removed">- #pragma ident   "%Z%%M% %I%     %E% SMI"</span>
+<span class="removed">- </span>
+  /*
+   * Disk error transport module
+   *
+   * This transport module is responsible for translating between disk errors
+   * and FMA ereports.  It is a read-only transport module, and checks for the
+<span class="newmarker">--- 19,31 ----</span>
+   * CDDL HEADER END
+   */
+  /*
+   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+   * Use is subject to license terms.
+<span class="new">+  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+   */
+  
+  /*
+   * Disk error transport module
+   *
+   * This transport module is responsible for translating between disk errors
+   * and FMA ereports.  It is a read-only transport module, and checks for the
+<hr></hr><span class="oldmarker">*** 33,42 ****</span>
+<span class="newmarker">--- 32,42 ----</span>
+   * following failures:
+   *
+   *      - overtemp
+   *      - predictive failure
+   *      - self-test failure
+<span class="new">+  *      - solid state media wearout</span>
+   *
+   * These failures are detected via the TOPO_METH_DISK_STATUS method, which
+   * leverages libdiskstatus to do the actual analysis.  This transport module is
+   * in charge of the following tasks:
+   *
+<hr></hr><span class="oldmarker">*** 111,121 ****</span>
+          nvlist_t *result;
+          nvlist_t *fmri, *faults;
+          char *protocol;
+          int err;
+          disk_monitor_t *dmp = arg;
+<span class="removed">-         uint64_t ena;</span>
+          nvpair_t *elem;
+          boolean_t fault;
+          nvlist_t *details;
+          char *fmristr;
+          nvlist_t *in = NULL;
+<span class="newmarker">--- 111,120 ----</span>
+<hr></hr><span class="oldmarker">*** 150,163 ****</span>
+                  return (TOPO_WALK_NEXT);
+          }
+  
+          nvlist_free(in);
+  
+<span class="removed">-         ena = fmd_event_ena_create(dmp-&gt;dm_hdl);</span>
+<span class="removed">- </span>
+          /*
+<span class="changed">!          * Add any faults.</span>
+           */
+          if (nvlist_lookup_nvlist(result, "faults", &amp;faults) == 0 &amp;&amp;
+              nvlist_lookup_string(result, "protocol", &amp;protocol) == 0) {
+                  elem = NULL;
+                  while ((elem = nvlist_next_nvpair(faults, elem)) != NULL) {
+<span class="newmarker">--- 149,160 ----</span>
+                  return (TOPO_WALK_NEXT);
+          }
+  
+          nvlist_free(in);
+  
+          /*
+<span class="changed">!          * Check for faults and post ereport(s) if needed</span>
+           */
+          if (nvlist_lookup_nvlist(result, "faults", &amp;faults) == 0 &amp;&amp;
+              nvlist_lookup_string(result, "protocol", &amp;protocol) == 0) {
+                  elem = NULL;
+                  while ((elem = nvlist_next_nvpair(faults, elem)) != NULL) {
+<hr></hr><span class="oldmarker">*** 168,179 ****</span>
+                          if (!fault ||
+                              nvlist_lookup_nvlist(result, nvpair_name(elem),
+                              &amp;details) != 0)
+                                  continue;
+  
+                          dt_post_ereport(dmp-&gt;dm_hdl, dmp-&gt;dm_xprt, protocol,
+<span class="changed">!                             nvpair_name(elem), ena, fmri, details);</span>
+                  }
+          }
+  
+          nvlist_free(result);
+          nvlist_free(fmri);
+<span class="newmarker">--- 165,183 ----</span>
+                          if (!fault ||
+                              nvlist_lookup_nvlist(result, nvpair_name(elem),
+                              &amp;details) != 0)
+                                  continue;
+  
+<span class="new">+                         if (strcmp(nvpair_name(elem),</span>
+<span class="new">+                             FM_EREPORT_SCSI_SSMWEAROUT) == 0 &amp;&amp;</span>
+<span class="new">+                             fmd_prop_get_int32(dmp-&gt;dm_hdl,</span>
+<span class="new">+                             "ignore-ssm-wearout") == FMD_B_TRUE)</span>
+<span class="new">+                                 continue;</span>
+<span class="new">+ </span>
+                          dt_post_ereport(dmp-&gt;dm_hdl, dmp-&gt;dm_xprt, protocol,
+<span class="changed">!                             nvpair_name(elem),</span>
+<span class="changed">!                             fmd_event_ena_create(dmp-&gt;dm_hdl), fmri, details);</span>
+                  }
+          }
+  
+          nvlist_free(result);
+          nvlist_free(fmri);
+<hr></hr><span class="oldmarker">*** 246,255 ****</span>
+<span class="newmarker">--- 250,260 ----</span>
+  
+  static const fmd_prop_t fmd_props[] = {
+          { "interval", FMD_TYPE_TIME, "1h" },
+          { "min-interval", FMD_TYPE_TIME, "1min" },
+          { "simulate", FMD_TYPE_STRING, "" },
+<span class="new">+         { "ignore-ssm-wearout", FMD_TYPE_BOOL, "false"},</span>
+          { NULL, 0, NULL }
+  };
+  
+  static const fmd_hdl_ops_t fmd_ops = {
+          NULL,                   /* fmdo_recv */
+<hr></hr><span class="oldmarker">*** 260,270 ****</span>
+          NULL,                   /* fmdo_send */
+          dt_topo_change,         /* fmdo_topo_change */
+  };
+  
+  static const fmd_hdl_info_t fmd_info = {
+<span class="changed">!         "Disk Transport Agent", "1.0", &amp;fmd_ops, fmd_props</span>
+  };
+  
+  void
+  _fmd_init(fmd_hdl_t *hdl)
+  {
+<span class="newmarker">--- 265,275 ----</span>
+          NULL,                   /* fmdo_send */
+          dt_topo_change,         /* fmdo_topo_change */
+  };
+  
+  static const fmd_hdl_info_t fmd_info = {
+<span class="changed">!         "Disk Transport Agent", "1.1", &amp;fmd_ops, fmd_props</span>
+  };
+  
+  void
+  _fmd_init(fmd_hdl_t *hdl)
+  {
+</pre></body></html>
+

@@ -1,0 +1,596 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/lib/fm/libdiskstatus/common/ds_scsi.h</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h
+</span><span class='added'>          +++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.h
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">13 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  /*
+  22   22   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23   23   * Use is subject to license terms.
+<span class='added'>       24 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  24   25   */
+  25   26  
+  26   27  #ifndef _DS_SCSI_H
+  27   28  #define _DS_SCSI_H
+  28   29  
+<span class='subtracted'>  29      -#pragma ident   "%Z%%M% %I%     %E% SMI"
+  30      -
+</span>  31   30  #include &lt;sys/types.h&gt;
+  32   31  #include &lt;sys/byteorder.h&gt;
+  33   32  #include &lt;sys/scsi/scsi.h&gt;
+  34   33  
+  35   34  #include "ds_impl.h"
+  36   35  
+  37   36  #ifdef  __cplusplus
+  38   37  extern "C" {
+  39   38  #endif
+  40   39  
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  41   40  #if !defined(_BIT_FIELDS_LTOH) &amp;&amp; !defined(_BIT_FIELDS_HTOL)
+  42   41  #error  One of _BIT_FIELDS_LTOH or _BIT_FIELDS_HTOL must be defined
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">2 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  43   42  #endif
+  44   43  
+  45   44  /*
+  46   45   * Log page structures
+  47   46   */
+  48   47  #pragma pack(1)
+  49   48  
+  50   49  typedef struct scsi_log_header {
+  51   50  #if defined(_BIT_FIELDS_LTOH)
+  52   51          uint8_t         lh_code : 6,
+<span class='subtracted'>  53      -                        __reserved : 2;
+</span><span class='added'>       52 +                        lh_spf : 1,
+       53 +                        lh_ds : 1;
+</span>  54   54  #else
+<span class='subtracted'>  55      -        uint8_t         __reserved : 2,
+</span><span class='added'>       55 +        uint8_t         lh_ds : 1,
+       56 +                        lh_spf : 1,
+</span>  56   57                          lh_code : 6;
+  57   58  #endif
+<span class='subtracted'>  58      -        uint8_t         __reserved2;
+</span><span class='added'>       59 +        uint8_t         lh_subpage;
+</span>  59   60          uint16_t        lh_length;
+  60   61  } scsi_log_header_t;
+  61   62  
+  62   63  typedef struct scsi_log_parameter_header {
+  63   64          uint16_t        lph_param;
+  64   65  #if defined(_BIT_FIELDS_LTOH)
+  65   66          uint8_t         lph_lp  : 1,
+  66   67                          lph_lbin : 1,
+  67   68                          lph_tmc : 2,
+  68   69                          lph_etc : 1,
+</pre>
+<pre id='elided3' class='elided' style='display: none'>  69   70                          lph_tsd : 1,
+  70   71                          lph_ds  : 1,
+  71   72                          lph_du  : 1;
+  72   73  #else
+  73   74          uint8_t         lph_du  : 1,
+  74   75                          lph_ds  : 1,
+  75   76                          lph_tsd : 1,
+  76   77                          lph_etc : 1,
+  77   78                          lph_tmc : 2,
+  78   79                          lph_lbin : 1,
+  79   80                          lph_lp  : 1;
+  80   81  #endif
+  81   82          uint8_t         lph_length;
+  82   83  } scsi_log_parameter_header_t;
+  83   84  
+  84   85  typedef struct scsi_supported_log_pages {
+  85   86          scsi_log_header_t       slp_hdr;
+  86   87          uchar_t                 slp_pages[1];
+  87   88  } scsi_supported_log_pages_t;
+  88   89  
+  89   90  typedef struct scsi_ie_log_param {
+  90   91          scsi_log_parameter_header_t     ie_hdr;
+  91   92          uchar_t                         ie_asc;
+  92   93          uchar_t                         ie_ascq;
+  93   94  } scsi_ie_log_param_t;
+  94   95  
+  95   96  /*
+  96   97   * The SCSI-3 SPC document states that IE log page (0x2F) parameter 0
+  97   98   * must have a length of at least 4 (including the length byte).
+  98   99   */
+  99  100  #define LOGPARAM_IE_MIN_LEN             2       /* the asc and ascq fields */
+ 100  101  
+ 101  102  #define INVALID_TEMPERATURE             0xff
+ 102  103  
+ 103  104  #define LOGPARAM_IE                     0x0000
+ 104  105  
+ 105  106  typedef struct scsi_temp_log_param {
+ 106  107          scsi_log_parameter_header_t     t_hdr;
+ 107  108          uchar_t                         __reserved;
+ 108  109          uchar_t                         t_temp;
+ 109  110  } scsi_temp_log_param_t;
+ 110  111  
+ 111  112  typedef struct scsi_selftest_log_param {
+ 112  113          scsi_log_parameter_header_t     st_hdr;
+ 113  114  #if defined(_BIT_FIELDS_LTOH)
+ 114  115          uint8_t         st_results      : 4,
+ 115  116                          __reserved1     : 1,
+ 116  117                          st_testcode     : 3;
+ 117  118  #else
+ 118  119          uint8_t         st_testcode     : 3,
+ 119  120                          __reserved1     : 1,
+ 120  121                          st_results      : 4;
+ 121  122  #endif
+ 122  123          uint8_t         st_number;
+ 123  124          uint16_t        st_timestamp;
+ 124  125          uint64_t        st_lba;
+ 125  126  #if defined(_BIT_FIELDS_LTOH)
+ 126  127          uint8_t         st_sensekey     : 4,
+ 127  128                          __reserved2     : 4;
+ 128  129  #else
+ 129  130          uint8_t         __reserved2     : 4,
+ 130  131                          st_sensekey     : 4;
+ 131  132  #endif
+ 132  133          uint8_t         st_asc;
+ 133  134          uint8_t         st_ascq;
+ 134  135          uint8_t         st_vendor;
+ 135  136  } scsi_selftest_log_param_t;
+ 136  137  
+ 137  138  /* The results field of the self-test log parameter */
+ 138  139  #define SELFTEST_OK                     0x0
+ 139  140  #define SELFTEST_ABORT_REQUEST          0x1
+ 140  141  #define SELFTEST_ABORT_OTHER            0x2
+ 141  142  #define SELFTEST_FAILURE_INCOMPLETE     0x3
+ 142  143  #define SELFTEST_FAILURE_SEG_UNKNOWN    0x4
+ 143  144  #define SELFTEST_FAILURE_SEG_FIRST      0x5
+ 144  145  #define SELFTEST_FAILURE_SEG_SECOND     0x6
+ 145  146  #define SELFTEST_FAILURE_SEG_OTHER      0x7
+ 146  147  #define SELFTEST_INPROGRESS             0xf
+ 147  148  
+ 148  149  #define SELFTEST_COMPLETE(code)                         \
+ 149  150          ((code) == SELFTEST_OK ||                       \
+ 150  151          ((code) &gt;= SELFTEST_FAILURE_INCOMPLETE &amp;&amp;       \
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">82 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 151  152          ((code) &lt;= SELFTEST_FAILURE_SEG_OTHER)))
+ 152  153  
+ 153  154  #define LOGPARAM_TEMP_CURTEMP           0x0000
+ 154  155  #define LOGPARAM_TEMP_REFTEMP           0x0001
+ 155  156  
+ 156  157  #define LOGPARAM_TEMP_LEN       \
+ 157  158          (sizeof (scsi_temp_log_param_t) - \
+ 158  159              sizeof (scsi_log_parameter_header_t))
+ 159  160  
+ 160  161  /*
+<span class='added'>      162 + * Described in SBC3
+      163 + */
+      164 +typedef struct scsi_ssm_log_param {
+      165 +        scsi_log_parameter_header_t ssm_hdr;
+      166 +        uint16_t                __reserved2;
+      167 +        uint8_t                 __reserved1;
+      168 +        uchar_t                 ssm_prcnt_used;
+      169 +} scsi_ssm_log_param_t;
+      170 +
+      171 +#define LOGPARAM_PRCNT_USED             0x0001
+      172 +#define LOGPARAM_PRCNT_USED_PARAM_LEN   0x04
+      173 +#define PRCNT_USED_FAULT_THRSH          90
+      174 +
+      175 +/*
+</span> 161  176   * Mode sense/select page header information
+ 162  177   */
+ 163  178  typedef struct scsi_ms_header {
+ 164  179          struct mode_header      ms_header;
+ 165  180          struct block_descriptor ms_descriptor;
+ 166  181  } scsi_ms_header_t;
+ 167  182  
+ 168  183  typedef struct scsi_ms_header_g1 {
+ 169  184          struct mode_header_g1   ms_header;
+ 170  185          struct block_descriptor ms_descriptor;
+</pre>
+<pre id='elided4' class='elided' style='display: none'> 171  186  } scsi_ms_header_g1_t;
+ 172  187  
+ 173  188  typedef struct scsi_ms_hdrs {
+ 174  189          int                             ms_length;
+ 175  190          union {
+ 176  191                  scsi_ms_header_t        g0;
+ 177  192                  scsi_ms_header_g1_t     g1;
+ 178  193          } ms_hdr;
+ 179  194  } scsi_ms_hdrs_t;
+ 180  195  
+ 181  196  typedef struct scsi_ie_page {
+ 182  197          struct mode_page ie_mp;
+ 183  198  #if defined(_BIT_FIELDS_LTOH)
+ 184  199          uint8_t         ie_logerr       : 1,    /* Errors should be logged */
+ 185  200                          __reserved1     : 1,
+ 186  201                          ie_test         : 1,    /* Enable test gen of IEs */
+ 187  202                          ie_dexcpt       : 1,    /* Disable exceptions */
+ 188  203                          ie_ewasc        : 1,    /* Enable warning generation */
+ 189  204                          ie_ebf          : 1,    /* enable backgrnd functions */
+ 190  205                          __reserved2     : 1,
+ 191  206                          ie_perf         : 1;    /* No delays during excptns */
+ 192  207          uint8_t         ie_mrie         : 4,    /* Method/reporting excptons */
+ 193  208                          __reserved3     : 4;
+ 194  209  #else
+ 195  210          uint8_t         ie_perf         : 1,    /* No delays during excptons */
+ 196  211                          __reserved2     : 1,
+ 197  212                          ie_ebf          : 1,    /* enable background funcs */
+ 198  213                          ie_ewasc        : 1,    /* Enable warning generation */
+ 199  214                          ie_dexcpt       : 1,    /* Disable exceptions */
+ 200  215                          ie_test         : 1,    /* Enable test gen of IEs */
+ 201  216                          __reserved1     : 1,
+ 202  217                          ie_logerr       : 1;    /* Errors should be logged */
+ 203  218          uint8_t         __reserved3     : 4,
+ 204  219                          ie_mrie         : 4;    /* Method of report excptns */
+ 205  220  #endif
+ 206  221          uint32_t        ie_interval_timer;      /* reporting interval for IEs */
+ 207  222          uint32_t        ie_report_count;        /* # of times to report an IE */
+ 208  223  } scsi_ie_page_t;
+ 209  224  
+ 210  225  #pragma pack()
+ 211  226  
+ 212  227  #define MODEPAGE_INFO_EXCPT_LEN (sizeof (scsi_ie_page_t))
+ 213  228  
+ 214  229  #define IEC_IE_ENABLED(ies) ((ies).ie_dexcpt == 0)
+ 215  230  #define IEC_IE_CHANGEABLE(ies) ((ies).ie_dexcpt == 1)
+ 216  231  #define IEC_MRIE_CHANGEABLE(ies) ((ies).ie_mrie == 0xf)
+ 217  232  #define IEC_PERF_CHANGEABLE(ies) ((ies).ie_perf == 1)
+ 218  233  #define IEC_EWASC_CHANGEABLE(ies) ((ies).ie_ewasc == 1)
+ 219  234  #define IEC_TEST_CHANGEABLE(ies) ((ies).ie_test == 1)
+ 220  235  #define IEC_RPTCNT_CHANGEABLE(ies) ((ies).ie_report_count == BE_32(0xffffffff))
+ 221  236  #define IEC_LOGERR_CHANGEABLE(ies) ((ies).ie_logerr == 1)
+ 222  237  
+ 223  238  /*
+ 224  239   * Values for the MRIE field of the informational exceptions control mode page
+ 225  240   */
+ 226  241  #define IE_REPORT_NONE                  0
+ 227  242  #define IE_REPORT_ASYNCH                1
+ 228  243  #define IE_REPORT_UNIT_ATTN             2
+ 229  244  #define IE_REPORT_RECOV_ERR_COND        3
+ 230  245  #define IE_REPORT_RECOV_ERR_ALWAYS      4
+ 231  246  #define IE_REPORT_NO_SENSE              5
+ 232  247  #define IE_REPORT_ON_REQUEST            6
+ 233  248  
+ 234  249  /*
+ 235  250   * Constants in support of the CONTROL MODE mode page (page 0xA)
+ 236  251   */
+ 237  252  #define MODEPAGE_CTRL_MODE_LEN  (sizeof (struct mode_control_scsi3))
+ 238  253  #define GLTSD_CHANGEABLE(chg)   ((chg).gltsd == 1)
+ 239  254  
+ 240  255  #define LOGPAGE_SELFTEST_MIN_PARAM_CODE 0x0001
+ 241  256  #define LOGPAGE_SELFTEST_MAX_PARAM_CODE 0x0014
+ 242  257  
+ 243  258  #define LOGPAGE_SELFTEST_PARAM_LEN \
+ 244  259          ((sizeof (scsi_selftest_log_param_t)) - \
+ 245  260              (sizeof (scsi_log_parameter_header_t)))
+ 246  261  
+ 247  262  /*
+ 248  263   * Macro to extract the length of a mode sense page
+ 249  264   * as returned by a target.
+ 250  265   */
+ 251  266  #define MODESENSE_PAGE_LEN(p)   (((int)((struct mode_page *)p)-&gt;length) + \
+ 252  267                                          sizeof (struct mode_page))
+ 253  268  
+ 254  269  /*
+ 255  270   * Mode Select options
+ 256  271   */
+ 257  272  #define MODE_SELECT_SP                  0x01
+ 258  273  #define MODE_SELECT_PF                  0x10
+ 259  274  
+ 260  275  
+ 261  276  /*
+ 262  277   * Mode Sense Page Control
+ 263  278   */
+ 264  279  #define PC_CURRENT              (0 &lt;&lt; 6)
+ 265  280  #define PC_CHANGEABLE           (1 &lt;&lt; 6)
+ 266  281  #define PC_DEFAULT              (2 &lt;&lt; 6)
+ 267  282  #define PC_SAVED                (3 &lt;&lt; 6)
+ 268  283  
+ 269  284  /*
+ 270  285   * Log Sense Page Control
+</pre>
+<table id='hb-elided4' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">100 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 271  286   */
+ 272  287  #define PC_CUMULATIVE           (1 &lt;&lt; 6)
+ 273  288  
+ 274  289  /*
+ 275  290   * LOG page codes
+ 276  291   */
+ 277  292  #define LOGPAGE_SUPP_LIST       0x00
+ 278  293  #define LOGPAGE_TEMP            0x0d
+ 279  294  #define LOGPAGE_SELFTEST        0x10
+ 280  295  #define LOGPAGE_IE              0x2f
+<span class='added'>      296 +/* Solid State Media log page code */
+      297 +#define LOGPAGE_SSM             0x11
+</span> 281  298  
+ 282  299  /* ASC constants */
+ 283  300  #define ASC_INVALID_OPCODE                              0x20
+ 284  301  #define ASC_INVALID_CDB_FIELD                           0x24
+ 285  302  #define ASC_FAILURE_PREDICTION_THRESHOLD_EXCEEDED       0x5d
+ 286  303  
+ 287  304  /* ASCQ constants */
+ 288  305  #define ASCQ_INVALID_OPCODE     0
+ 289  306  
+ 290  307  /* Error tests */
+</pre>
+<pre id='elided5' class='elided' style='display: none'> 291  308  #define SCSI_INVALID_OPCODE(s, a, aq) \
+ 292  309          (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_OPCODE) &amp;&amp; \
+ 293  310          ((aq) == ASCQ_INVALID_OPCODE))
+ 294  311  
+ 295  312  #define MODE_PAGE_UNSUPPORTED(s, a, aq) \
+ 296  313          (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_CDB_FIELD))
+ 297  314  
+ 298  315  /* command length to use */
+ 299  316  #define MODE_CMD_LEN_UNKNOWN            0
+</pre>
+<table id='hb-elided5' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided5", "hb-elided5", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">9 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided5", "hb-elided5", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 300  317  #define MODE_CMD_LEN_6                  1
+ 301  318  #define MODE_CMD_LEN_10                 2
+ 302  319  
+ 303  320  /* supported modepages bitmask */
+ 304  321  #define MODEPAGE_SUPP_IEC               0x1
+ 305  322  
+ 306  323  /* supported logpages bitmask */
+ 307  324  #define LOGPAGE_SUPP_IE                 0x1
+ 308  325  #define LOGPAGE_SUPP_TEMP               0x2
+ 309  326  #define LOGPAGE_SUPP_SELFTEST           0x4
+<span class='added'>      327 +#define LOGPAGE_SUPP_SSM                0x8
+</span> 310  328  
+ 311  329  #define MSG_BUFLEN      256
+ 312  330  
+ 313  331  /*
+ 314  332   * For SCSI commands which want to accept arbitrary length responses, we need to
+ 315  333   * allocate an appropriate sized buffer.  The maximum length is USHRT_MAX,
+ 316  334   * because some devices return nothing if the buffer length is too big.
+ 317  335   */
+ 318  336  #define MAX_BUFLEN(type)        (USHRT_MAX - sizeof (type))
+ 319  337  
+ 320  338  extern ds_transport_t ds_scsi_uscsi_transport;
+ 321  339  extern ds_transport_t ds_scsi_sim_transport;
+ 322  340  
+ 323  341  #ifdef  __cplusplus
+ 324  342  }
+ 325  343  #endif
+ 326  344  
+ 327  345  #endif  /* _DS_SCSI_H */
+    </pre>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 5; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 5; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

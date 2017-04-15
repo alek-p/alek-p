@@ -1,0 +1,546 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Sdiff usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c</title>
+</head><body id="SUNWwebrev">
+<a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+
+<table><tr valign="top">
+<td><pre>
+
+</pre><hr></hr><pre>
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+
+  24  */
+  25 
+<span class="removed">  26 #pragma ident   "%Z%%M% %I%     %E% SMI"</span>
+<span class="removed">  27 </span>
+  28 /*
+  29  * Disk error transport module
+  30  *
+  31  * This transport module is responsible for translating between disk errors
+  32  * and FMA ereports.  It is a read-only transport module, and checks for the
+  33  * following failures:
+  34  *
+  35  *      - overtemp
+  36  *      - predictive failure
+  37  *      - self-test failure
+
+  38  *
+  39  * These failures are detected via the TOPO_METH_DISK_STATUS method, which
+  40  * leverages libdiskstatus to do the actual analysis.  This transport module is
+  41  * in charge of the following tasks:
+  42  *
+  43  *      - discovering available devices
+  44  *      - periodically checking devices
+  45  *      - managing device addition/removal
+  46  */
+  47 
+  48 #include &lt;ctype.h&gt;
+  49 #include &lt;fm/fmd_api.h&gt;
+  50 #include &lt;fm/libdiskstatus.h&gt;
+  51 #include &lt;fm/libtopo.h&gt;
+  52 #include &lt;fm/topo_hc.h&gt;
+  53 #include &lt;fm/topo_mod.h&gt;
+  54 #include &lt;limits.h&gt;
+  55 #include &lt;string.h&gt;
+  56 #include &lt;sys/fm/io/scsi.h&gt;
+  57 #include &lt;sys/fm/protocol.h&gt;
+
+</pre><hr></hr><pre>
+  96                         nvlist_free(nvl);
+  97                         dt_stats.dropped.fmds_value.ui64++;
+  98                 }
+  99         } else {
+ 100                 dt_stats.dropped.fmds_value.ui64++;
+ 101         }
+ 102 }
+ 103 
+ 104 /*
+ 105  * Check a single topo node for failure.  This simply invokes the disk status
+ 106  * method, and generates any ereports as necessary.
+ 107  */
+ 108 static int
+ 109 dt_analyze_disk(topo_hdl_t *thp, tnode_t *node, void *arg)
+ 110 {
+ 111         nvlist_t *result;
+ 112         nvlist_t *fmri, *faults;
+ 113         char *protocol;
+ 114         int err;
+ 115         disk_monitor_t *dmp = arg;
+<span class="removed"> 116         uint64_t ena;</span>
+ 117         nvpair_t *elem;
+ 118         boolean_t fault;
+ 119         nvlist_t *details;
+ 120         char *fmristr;
+ 121         nvlist_t *in = NULL;
+ 122 
+ 123         if (topo_node_resource(node, &amp;fmri, &amp;err) != 0) {
+ 124                 fmd_hdl_error(dmp-&gt;dm_hdl, "failed to get fmri: %s\n",
+ 125                     topo_strerror(err));
+ 126                 return (TOPO_WALK_ERR);
+ 127         }
+ 128 
+ 129         if (topo_hdl_nvalloc(thp, &amp;in, NV_UNIQUE_NAME) != 0) {
+ 130                 nvlist_free(fmri);
+ 131                 return (TOPO_WALK_ERR);
+ 132         }
+ 133 
+ 134         if (dmp-&gt;dm_sim_search) {
+ 135                 fmristr = NULL;
+ 136                 if (topo_fmri_nvl2str(thp, fmri, &amp;fmristr, &amp;err) == 0 &amp;&amp;
+ 137                     strstr(fmristr, dmp-&gt;dm_sim_search) != 0)
+ 138                         (void) nvlist_add_string(in, "path", dmp-&gt;dm_sim_file);
+ 139                 topo_hdl_strfree(thp, fmristr);
+ 140         }
+ 141 
+ 142         /*
+ 143          * Try to invoke the method.  If this fails (most likely because the
+ 144          * method is not supported), then ignore this node.
+ 145          */
+ 146         if (topo_method_invoke(node, TOPO_METH_DISK_STATUS,
+ 147             TOPO_METH_DISK_STATUS_VERSION, in, &amp;result, &amp;err) != 0) {
+ 148                 nvlist_free(fmri);
+ 149                 nvlist_free(in);
+ 150                 return (TOPO_WALK_NEXT);
+ 151         }
+ 152 
+ 153         nvlist_free(in);
+ 154 
+<span class="removed"> 155         ena = fmd_event_ena_create(dmp-&gt;dm_hdl);</span>
+<span class="removed"> 156 </span>
+ 157         /*
+<span class="changed"> 158          * Add any faults.</span>
+ 159          */
+ 160         if (nvlist_lookup_nvlist(result, "faults", &amp;faults) == 0 &amp;&amp;
+ 161             nvlist_lookup_string(result, "protocol", &amp;protocol) == 0) {
+ 162                 elem = NULL;
+ 163                 while ((elem = nvlist_next_nvpair(faults, elem)) != NULL) {
+ 164                         if (nvpair_type(elem) != DATA_TYPE_BOOLEAN_VALUE)
+ 165                                 continue;
+ 166 
+ 167                         (void) nvpair_value_boolean_value(elem, &amp;fault);
+ 168                         if (!fault ||
+ 169                             nvlist_lookup_nvlist(result, nvpair_name(elem),
+ 170                             &amp;details) != 0)
+ 171                                 continue;
+ 172 
+
+
+
+
+
+
+ 173                         dt_post_ereport(dmp-&gt;dm_hdl, dmp-&gt;dm_xprt, protocol,
+<span class="changed"> 174                             nvpair_name(elem), ena, fmri, details);</span>
+
+ 175                 }
+ 176         }
+ 177 
+ 178         nvlist_free(result);
+ 179         nvlist_free(fmri);
+ 180 
+ 181         return (TOPO_WALK_NEXT);
+ 182 }
+ 183 
+ 184 /*
+ 185  * Periodic timeout.  Iterates over all hc:// topo nodes, calling
+ 186  * dt_analyze_disk() for each one.
+ 187  */
+ 188 /*ARGSUSED*/
+ 189 static void
+ 190 dt_timeout(fmd_hdl_t *hdl, id_t id, void *data)
+ 191 {
+ 192         topo_hdl_t *thp;
+ 193         topo_walk_t *twp;
+ 194         int err;
+
+</pre><hr></hr><pre>
+ 231  */
+ 232 /*ARGSUSED*/
+ 233 static void
+ 234 dt_topo_change(fmd_hdl_t *hdl, topo_hdl_t *thp)
+ 235 {
+ 236         disk_monitor_t *dmp = fmd_hdl_getspecific(hdl);
+ 237 
+ 238         if (dmp-&gt;dm_timer_istopo)
+ 239                 return;
+ 240 
+ 241         fmd_timer_remove(hdl, dmp-&gt;dm_timer);
+ 242         dmp-&gt;dm_timer = fmd_timer_install(hdl, NULL, NULL,
+ 243             fmd_prop_get_int64(hdl, "min-interval"));
+ 244         dmp-&gt;dm_timer_istopo = B_TRUE;
+ 245 }
+ 246 
+ 247 static const fmd_prop_t fmd_props[] = {
+ 248         { "interval", FMD_TYPE_TIME, "1h" },
+ 249         { "min-interval", FMD_TYPE_TIME, "1min" },
+ 250         { "simulate", FMD_TYPE_STRING, "" },
+
+ 251         { NULL, 0, NULL }
+ 252 };
+ 253 
+ 254 static const fmd_hdl_ops_t fmd_ops = {
+ 255         NULL,                   /* fmdo_recv */
+ 256         dt_timeout,             /* fmdo_timeout */
+ 257         NULL,                   /* fmdo_close */
+ 258         NULL,                   /* fmdo_stats */
+ 259         NULL,                   /* fmdo_gc */
+ 260         NULL,                   /* fmdo_send */
+ 261         dt_topo_change,         /* fmdo_topo_change */
+ 262 };
+ 263 
+ 264 static const fmd_hdl_info_t fmd_info = {
+<span class="changed"> 265         "Disk Transport Agent", "1.0", &amp;fmd_ops, fmd_props</span>
+ 266 };
+ 267 
+ 268 void
+ 269 _fmd_init(fmd_hdl_t *hdl)
+ 270 {
+ 271         disk_monitor_t *dmp;
+ 272         char *simulate;
+ 273 
+ 274         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0)
+ 275                 return;
+ 276 
+ 277         (void) fmd_stat_create(hdl, FMD_STAT_NOALLOC,
+ 278             sizeof (dt_stats) / sizeof (fmd_stat_t),
+ 279             (fmd_stat_t *)&amp;dt_stats);
+ 280 
+ 281         dmp = fmd_hdl_zalloc(hdl, sizeof (disk_monitor_t), FMD_SLEEP);
+ 282         fmd_hdl_setspecific(hdl, dmp);
+ 283 
+ 284         dmp-&gt;dm_xprt = fmd_xprt_open(hdl, FMD_XPRT_RDONLY, NULL, NULL);
+ 285         dmp-&gt;dm_interval = fmd_prop_get_int64(hdl, "interval");
+
+</pre><hr></hr>
+</pre></td><td><pre>
+
+</pre><hr></hr><pre>
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+<span class="new">  24  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+  25  */
+  26 
+
+
+  27 /*
+  28  * Disk error transport module
+  29  *
+  30  * This transport module is responsible for translating between disk errors
+  31  * and FMA ereports.  It is a read-only transport module, and checks for the
+  32  * following failures:
+  33  *
+  34  *      - overtemp
+  35  *      - predictive failure
+  36  *      - self-test failure
+<span class="new">  37  *      - solid state media wearout</span>
+  38  *
+  39  * These failures are detected via the TOPO_METH_DISK_STATUS method, which
+  40  * leverages libdiskstatus to do the actual analysis.  This transport module is
+  41  * in charge of the following tasks:
+  42  *
+  43  *      - discovering available devices
+  44  *      - periodically checking devices
+  45  *      - managing device addition/removal
+  46  */
+  47 
+  48 #include &lt;ctype.h&gt;
+  49 #include &lt;fm/fmd_api.h&gt;
+  50 #include &lt;fm/libdiskstatus.h&gt;
+  51 #include &lt;fm/libtopo.h&gt;
+  52 #include &lt;fm/topo_hc.h&gt;
+  53 #include &lt;fm/topo_mod.h&gt;
+  54 #include &lt;limits.h&gt;
+  55 #include &lt;string.h&gt;
+  56 #include &lt;sys/fm/io/scsi.h&gt;
+  57 #include &lt;sys/fm/protocol.h&gt;
+
+</pre><hr></hr><pre>
+  96                         nvlist_free(nvl);
+  97                         dt_stats.dropped.fmds_value.ui64++;
+  98                 }
+  99         } else {
+ 100                 dt_stats.dropped.fmds_value.ui64++;
+ 101         }
+ 102 }
+ 103 
+ 104 /*
+ 105  * Check a single topo node for failure.  This simply invokes the disk status
+ 106  * method, and generates any ereports as necessary.
+ 107  */
+ 108 static int
+ 109 dt_analyze_disk(topo_hdl_t *thp, tnode_t *node, void *arg)
+ 110 {
+ 111         nvlist_t *result;
+ 112         nvlist_t *fmri, *faults;
+ 113         char *protocol;
+ 114         int err;
+ 115         disk_monitor_t *dmp = arg;
+
+ 116         nvpair_t *elem;
+ 117         boolean_t fault;
+ 118         nvlist_t *details;
+ 119         char *fmristr;
+ 120         nvlist_t *in = NULL;
+ 121 
+ 122         if (topo_node_resource(node, &amp;fmri, &amp;err) != 0) {
+ 123                 fmd_hdl_error(dmp-&gt;dm_hdl, "failed to get fmri: %s\n",
+ 124                     topo_strerror(err));
+ 125                 return (TOPO_WALK_ERR);
+ 126         }
+ 127 
+ 128         if (topo_hdl_nvalloc(thp, &amp;in, NV_UNIQUE_NAME) != 0) {
+ 129                 nvlist_free(fmri);
+ 130                 return (TOPO_WALK_ERR);
+ 131         }
+ 132 
+ 133         if (dmp-&gt;dm_sim_search) {
+ 134                 fmristr = NULL;
+ 135                 if (topo_fmri_nvl2str(thp, fmri, &amp;fmristr, &amp;err) == 0 &amp;&amp;
+ 136                     strstr(fmristr, dmp-&gt;dm_sim_search) != 0)
+ 137                         (void) nvlist_add_string(in, "path", dmp-&gt;dm_sim_file);
+ 138                 topo_hdl_strfree(thp, fmristr);
+ 139         }
+ 140 
+ 141         /*
+ 142          * Try to invoke the method.  If this fails (most likely because the
+ 143          * method is not supported), then ignore this node.
+ 144          */
+ 145         if (topo_method_invoke(node, TOPO_METH_DISK_STATUS,
+ 146             TOPO_METH_DISK_STATUS_VERSION, in, &amp;result, &amp;err) != 0) {
+ 147                 nvlist_free(fmri);
+ 148                 nvlist_free(in);
+ 149                 return (TOPO_WALK_NEXT);
+ 150         }
+ 151 
+ 152         nvlist_free(in);
+ 153 
+
+
+ 154         /*
+<span class="changed"> 155          * Check for faults and post ereport(s) if needed</span>
+ 156          */
+ 157         if (nvlist_lookup_nvlist(result, "faults", &amp;faults) == 0 &amp;&amp;
+ 158             nvlist_lookup_string(result, "protocol", &amp;protocol) == 0) {
+ 159                 elem = NULL;
+ 160                 while ((elem = nvlist_next_nvpair(faults, elem)) != NULL) {
+ 161                         if (nvpair_type(elem) != DATA_TYPE_BOOLEAN_VALUE)
+ 162                                 continue;
+ 163 
+ 164                         (void) nvpair_value_boolean_value(elem, &amp;fault);
+ 165                         if (!fault ||
+ 166                             nvlist_lookup_nvlist(result, nvpair_name(elem),
+ 167                             &amp;details) != 0)
+ 168                                 continue;
+ 169 
+<span class="new"> 170                         if (strcmp(nvpair_name(elem),</span>
+<span class="new"> 171                             FM_EREPORT_SCSI_SSMWEAROUT) == 0 &amp;&amp;</span>
+<span class="new"> 172                             fmd_prop_get_int32(dmp-&gt;dm_hdl,</span>
+<span class="new"> 173                             "ignore-ssm-wearout") == FMD_B_TRUE)</span>
+<span class="new"> 174                                 continue;</span>
+<span class="new"> 175 </span>
+ 176                         dt_post_ereport(dmp-&gt;dm_hdl, dmp-&gt;dm_xprt, protocol,
+<span class="changed"> 177                             nvpair_name(elem),</span>
+<span class="changed"> 178                             fmd_event_ena_create(dmp-&gt;dm_hdl), fmri, details);</span>
+ 179                 }
+ 180         }
+ 181 
+ 182         nvlist_free(result);
+ 183         nvlist_free(fmri);
+ 184 
+ 185         return (TOPO_WALK_NEXT);
+ 186 }
+ 187 
+ 188 /*
+ 189  * Periodic timeout.  Iterates over all hc:// topo nodes, calling
+ 190  * dt_analyze_disk() for each one.
+ 191  */
+ 192 /*ARGSUSED*/
+ 193 static void
+ 194 dt_timeout(fmd_hdl_t *hdl, id_t id, void *data)
+ 195 {
+ 196         topo_hdl_t *thp;
+ 197         topo_walk_t *twp;
+ 198         int err;
+
+</pre><hr></hr><pre>
+ 235  */
+ 236 /*ARGSUSED*/
+ 237 static void
+ 238 dt_topo_change(fmd_hdl_t *hdl, topo_hdl_t *thp)
+ 239 {
+ 240         disk_monitor_t *dmp = fmd_hdl_getspecific(hdl);
+ 241 
+ 242         if (dmp-&gt;dm_timer_istopo)
+ 243                 return;
+ 244 
+ 245         fmd_timer_remove(hdl, dmp-&gt;dm_timer);
+ 246         dmp-&gt;dm_timer = fmd_timer_install(hdl, NULL, NULL,
+ 247             fmd_prop_get_int64(hdl, "min-interval"));
+ 248         dmp-&gt;dm_timer_istopo = B_TRUE;
+ 249 }
+ 250 
+ 251 static const fmd_prop_t fmd_props[] = {
+ 252         { "interval", FMD_TYPE_TIME, "1h" },
+ 253         { "min-interval", FMD_TYPE_TIME, "1min" },
+ 254         { "simulate", FMD_TYPE_STRING, "" },
+<span class="new"> 255         { "ignore-ssm-wearout", FMD_TYPE_BOOL, "false"},</span>
+ 256         { NULL, 0, NULL }
+ 257 };
+ 258 
+ 259 static const fmd_hdl_ops_t fmd_ops = {
+ 260         NULL,                   /* fmdo_recv */
+ 261         dt_timeout,             /* fmdo_timeout */
+ 262         NULL,                   /* fmdo_close */
+ 263         NULL,                   /* fmdo_stats */
+ 264         NULL,                   /* fmdo_gc */
+ 265         NULL,                   /* fmdo_send */
+ 266         dt_topo_change,         /* fmdo_topo_change */
+ 267 };
+ 268 
+ 269 static const fmd_hdl_info_t fmd_info = {
+<span class="changed"> 270         "Disk Transport Agent", "1.1", &amp;fmd_ops, fmd_props</span>
+ 271 };
+ 272 
+ 273 void
+ 274 _fmd_init(fmd_hdl_t *hdl)
+ 275 {
+ 276         disk_monitor_t *dmp;
+ 277         char *simulate;
+ 278 
+ 279         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0)
+ 280                 return;
+ 281 
+ 282         (void) fmd_stat_create(hdl, FMD_STAT_NOALLOC,
+ 283             sizeof (dt_stats) / sizeof (fmd_stat_t),
+ 284             (fmd_stat_t *)&amp;dt_stats);
+ 285 
+ 286         dmp = fmd_hdl_zalloc(hdl, sizeof (disk_monitor_t), FMD_SLEEP);
+ 287         fmd_hdl_setspecific(hdl, dmp);
+ 288 
+ 289         dmp-&gt;dm_xprt = fmd_xprt_open(hdl, FMD_XPRT_RDONLY, NULL, NULL);
+ 290         dmp-&gt;dm_interval = fmd_prop_get_int64(hdl, "interval");
+
+</pre><hr></hr>
+</pre></td>
+</tr></table>
+</body></html>

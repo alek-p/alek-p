@@ -1,0 +1,16 @@
+usr/src/cmd/fm/dicts/DISK.dict
+usr/src/cmd/fm/dicts/DISK.po
+usr/src/cmd/fm/eversholt/files/common/disk.esc
+usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c
+usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h
+usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf
+usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c
+usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf
+usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c
+usr/src/lib/fm/libdiskstatus/Makefile
+usr/src/lib/fm/libdiskstatus/common/ds_impl.h
+usr/src/lib/fm/libdiskstatus/common/ds_scsi.c
+usr/src/lib/fm/libdiskstatus/common/ds_scsi.h
+usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c
+usr/src/uts/common/sys/fm/io/disk.h
+usr/src/uts/common/sys/fm/io/scsi.h

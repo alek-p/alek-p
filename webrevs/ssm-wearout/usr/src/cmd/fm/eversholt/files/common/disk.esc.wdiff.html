@@ -1,0 +1,440 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/cmd/fm/eversholt/files/common/disk.esc</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/cmd/fm/eversholt/files/common/disk.esc
+</span><span class='added'>          +++ new/usr/src/cmd/fm/eversholt/files/common/disk.esc
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">12 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  /*
+  22   22   * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+<span class='added'>       23 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  23   24   */
+  24   25  
+  25   26  #pragma dictionary "DISK"
+  26   27  
+  27   28  #define P                       disk
+  28   29  
+  29   30  fru P;
+  30   31  asru P;
+  31   32  
+  32   33  /*
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  33   34   * Over all comments for this file:
+  34   35   * &lt;disk-as-detector&gt; The disk-as-detector DE provides the mapping between
+  35   36   * ereports generated by a kernel disk driver sd(7D) and resulting faults.
+  36   37   */
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">4 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  37   38  
+  38   39  /*
+  39   40   * SERD engine for media error fault propagation:
+  40   41   *
+  41   42   * This strategy is designed to give a file system, like ZFS, the
+  42   43   * ability to attempt data recovery/relocation without faulting a disk.
+  43   44   * This implementation depends on a file system retry to the same lba
+  44   45   * to trigger a fault when recovery/relocation is not possible.
+  45   46   *
+  46   47   * We let the engine propagate one error only once every 1 minute and then if we
+<span class='subtracted'>  47      - * still get 2 or more * errors within 24 hours for the same LBA, there is a fault.
+</span><span class='added'>       48 + * still get 2 or more errors within 24 hours for the same LBA,
+       49 + * there is a fault.
+</span>  48   50   */
+  49   51  engine serd.io.scsi.cmd.disk.dev.rqs.merr@P, N=1, T=24h;
+  50   52  
+  51   53  /*
+  52   54   * disk-as-detector: fault events.
+  53   55   */
+  54   56  event fault.io.scsi.cmd.disk.dev.rqs.derr@P;
+  55   57  event fault.io.scsi.cmd.disk.dev.rqs.merr@P,
+  56   58      engine=serd.io.scsi.cmd.disk.dev.rqs.merr@P;
+  57   59  
+</pre>
+<pre id='elided3' class='elided' style='display: none'>  58   60  /*
+  59   61   * The uderr fault will be defined at some future time.
+  60   62   * event fault.io.scsi.cmd.disk.dev.uderr@P;
+  61   63   */
+  62   64  
+  63   65  /*
+  64   66   * disk-as-detector: upset events.
+  65   67   * NOTE: For now we define an upset to implement discard.
+  66   68   */
+  67   69  event upset.io.scsi.cmd.disk.dev.rqs.derr@P;
+  68   70  event upset.io.scsi.cmd.disk.dev.rqs.merr@P;
+  69   71  event upset.io.scsi.cmd.disk.dev.uderr@P;
+  70   72  event upset.io.scsi.cmd.disk.dev.serr@P;
+  71   73  event upset.io.scsi.cmd.disk.tran@P;
+  72   74  event upset.io.scsi.cmd.disk.recovered@P;
+  73   75  
+  74   76  /*
+  75   77   * disk-as-detector: ereports from the kernel.
+  76   78   *
+  77   79   * We don't know the topology for all scsi disks, but the kernel will always
+  78   80   * generate ereport telemetry assuming that we do. We define these ereports
+  79   81   * with 'discard_if_config_unknown=1', which permits ereports against things
+  80   82   * with unknown topology to be silently discarded.  The ereport data is logged
+  81   83   * in either case, and can be viewed via 'fmdump -eV'.
+  82   84   */
+  83   85  event ereport.io.scsi.cmd.disk.dev.rqs.derr@P, discard_if_config_unknown=1;
+  84   86  event ereport.io.scsi.cmd.disk.dev.rqs.merr@P, discard_if_config_unknown=1;
+  85   87  event ereport.io.scsi.cmd.disk.dev.serr@P, discard_if_config_unknown=1;
+  86   88  event ereport.io.scsi.cmd.disk.dev.uderr@P, discard_if_config_unknown=1;
+  87   89  event ereport.io.scsi.cmd.disk.recovered@P, discard_if_config_unknown=1;
+  88   90  event ereport.io.scsi.cmd.disk.tran@P, discard_if_config_unknown=1;
+  89   91  
+  90   92  /*
+  91   93   * For some ereports we let the 'driver-assessment', communicated as part of
+  92   94   * the ereport payload, determine fault .vs. upset via propagation constraints.
+  93   95   */
+  94   96  #define DRIVER_ASSESSMENT_FATAL         \
+  95   97              (payloadprop_contains("driver-assessment", "fatal"))
+  96   98  #define DRIVER_ASSESSMENT_NONFATAL      (!DRIVER_ASSESSMENT_FATAL)
+  97   99  
+  98  100  /*
+  99  101   * disk-as-detector: propagations from faults(based on
+ 100  102   * DRIVER_ASSESSMENT_FATAL).
+ 101  103   * We need to set additional fault payloads to indicate fault details.
+ 102  104   * The payload we may need are listed as following:
+ 103  105   * fault.io.scsi.cmd.disk.dev.rqs.derr
+ 104  106   *     op_code, key, asc, ascq
+ 105  107   * fault.io.scsi.cmd.disk.dev.rqs.merr
+ 106  108   *     op_code, key, asc, ascq, lba
+ 107  109   */
+ 108  110  prop fault.io.scsi.cmd.disk.dev.rqs.derr@P-&gt;
+ 109  111      ereport.io.scsi.cmd.disk.dev.rqs.derr@P{ DRIVER_ASSESSMENT_FATAL &amp;&amp;
+ 110  112      setpayloadprop("key", payloadprop("key")) &amp;&amp;
+ 111  113      setpayloadprop("asc", payloadprop("asc")) &amp;&amp;
+ 112  114      setpayloadprop("ascq", payloadprop("ascq"))};
+ 113  115  
+ 114  116  /*
+ 115  117   * Utilize setserdsuffix with specific LBA, 
+ 116  118   * the serd engine would only trigger if the fault recurred on the same LBA
+ 117  119   */
+ 118  120  prop fault.io.scsi.cmd.disk.dev.rqs.merr@P-&gt;
+ 119  121      ereport.io.scsi.cmd.disk.dev.rqs.merr@P{ DRIVER_ASSESSMENT_FATAL &amp;&amp;
+ 120  122      setserdsuffix(payloadprop("lba")) &amp;&amp;
+ 121  123      setpayloadprop("key", payloadprop("key")) &amp;&amp;
+ 122  124      setpayloadprop("asc", payloadprop("asc")) &amp;&amp;
+ 123  125      setpayloadprop("ascq", payloadprop("ascq")) &amp;&amp;
+ 124  126      setpayloadprop("lba", payloadprop("lba"))};
+ 125  127  
+ 126  128  /*
+ 127  129   * NOTE: this propagation uses the "may" propagation of eversholt.
+ 128  130   * The ereport need never exist. It's just a way of making
+ 129  131   * the diagnosis wait for the within time on that ereport
+ 130  132   * to complete. Once it has completed the diagnosis continues
+ 131  133   * even though the dummy ereport didn't occur.
+ 132  134   */
+ 133  135  event ereport.io.scsi.cmd.disk.dev.rqs.merr.dummy@P {within(60s)};
+ 134  136  prop fault.io.scsi.cmd.disk.dev.rqs.merr@P (0) -&gt;
+ 135  137          ereport.io.scsi.cmd.disk.dev.rqs.merr.dummy@P;
+ 136  138  
+ 137  139  /*
+ 138  140   * The uderr fault will be propagated at some future time.
+ 139  141   * prop fault.io.scsi.cmd.disk.dev.uderr@P-&gt;
+ 140  142   *     ereport.io.scsi.cmd.disk.dev.uderr@P{ DRIVER_ASSESSMENT_FATAL };
+ 141  143   */
+ 142  144  
+ 143  145  /*
+ 144  146   * disk-as-detector: propagations from upsets(based on
+ 145  147   * DRIVER_ASSESSMENT_NONFATAL).
+ 146  148   */
+ 147  149  prop upset.io.scsi.cmd.disk.dev.rqs.derr@P-&gt;
+ 148  150      ereport.io.scsi.cmd.disk.dev.rqs.derr@P{ DRIVER_ASSESSMENT_NONFATAL };
+ 149  151  
+ 150  152  prop upset.io.scsi.cmd.disk.dev.rqs.merr@P-&gt;
+ 151  153      ereport.io.scsi.cmd.disk.dev.rqs.merr@P{ DRIVER_ASSESSMENT_NONFATAL };
+ 152  154  
+ 153  155  /*
+ 154  156   * disk-as-detector: propagations from upsets(independent of
+ 155  157   * driver-assessment)
+ 156  158   */
+ 157  159  
+ 158  160  prop upset.io.scsi.cmd.disk.dev.serr@P-&gt;
+ 159  161      ereport.io.scsi.cmd.disk.dev.serr@P;
+ 160  162  
+ 161  163  prop upset.io.scsi.cmd.disk.dev.uderr@P-&gt;
+ 162  164      ereport.io.scsi.cmd.disk.dev.uderr@P;
+ 163  165  
+ 164  166  prop upset.io.scsi.cmd.disk.recovered@P-&gt;
+ 165  167      ereport.io.scsi.cmd.disk.recovered@P;
+ 166  168  
+ 167  169  prop upset.io.scsi.cmd.disk.tran@P-&gt;
+ 168  170      ereport.io.scsi.cmd.disk.tran@P;
+ 169  171  
+ 170  172  /*
+ 171  173   * --------------------------------------
+ 172  174   * The remainder of this file contains rules associated with the operation of
+ 173  175   * cmd/fm/modules/common/disk-monitor/disk_monitor.c code.
+ 174  176   * 
+ 175  177   * The disk DE provides a very simple 1-to-1 mapping between SCSI disk events
+ 176  178   * generated by the disk-transport fmd module, and the resulting faults.
+ 177  179   */
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">120 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 178  180  
+ 179  181  /*
+ 180  182   * Fault events.
+ 181  183   */
+ 182  184  event fault.io.disk.over-temperature@P,
+ 183  185      FITrate=10, FRU=P, ASRU=P;
+ 184  186  event fault.io.disk.predictive-failure@P, FITrate=10,
+ 185  187      FITrate=10, FRU=P, ASRU=P;
+ 186  188  event fault.io.disk.self-test-failure@P, FITrate=10,
+ 187  189      FITrate=10, FRU=P, ASRU=P;
+<span class='added'>      190 +event fault.io.disk.ssm-wearout@P;
+</span> 188  191  
+ 189  192  /*
+ 190  193   * ereports.
+ 191  194   */
+ 192  195  event ereport.io.scsi.disk.over-temperature@P;
+ 193  196  event ereport.io.scsi.disk.predictive-failure@P;
+ 194  197  event ereport.io.scsi.disk.self-test-failure@P;
+<span class='added'>      198 +event ereport.io.scsi.disk.ssm-wearout@P;
+</span> 195  199  
+ 196  200  /*
+ 197  201   * Propagations.
+ 198  202   */
+ 199  203  prop fault.io.disk.over-temperature@P -&gt;
+ 200  204      ereport.io.scsi.disk.over-temperature@P;
+ 201  205  
+ 202  206  prop fault.io.disk.self-test-failure@P -&gt;
+ 203  207      ereport.io.scsi.disk.self-test-failure@P;
+ 204  208  
+ 205  209  prop fault.io.disk.predictive-failure@P -&gt;
+ 206  210      ereport.io.scsi.disk.predictive-failure@P {
+ 207  211      setpayloadprop("asc", payloadprop("additional-sense-code")) &amp;&amp;
+ 208  212      setpayloadprop("ascq", payloadprop("additional-sense-code-qualifier")) };
+<span class='added'>      213 +
+      214 +prop fault.io.disk.ssm-wearout@P -&gt;
+      215 +    ereport.io.scsi.disk.ssm-wearout@P {
+      216 +    setpayloadprop("current-wearout-percentage",
+      217 +    payloadprop("current-ssm-wearout"))
+      218 +    &amp;&amp; setpayloadprop("threshold-wearout-percentage",
+      219 +    payloadprop("threshold-ssm-wearout")) };
+</span>    </pre>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 3; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 3; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

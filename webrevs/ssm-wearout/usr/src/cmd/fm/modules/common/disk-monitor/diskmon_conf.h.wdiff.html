@@ -1,0 +1,474 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h
+</span><span class='added'>          +++ new/usr/src/cmd/fm/modules/common/disk-monitor/diskmon_conf.h
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">14 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  
+  22   22  /*
+  23   23   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  24   24   * Use is subject to license terms.
+<span class='added'>       25 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  25   26   */
+  26   27  
+  27   28  #ifndef _DISKMOND_CONF_H
+  28   29  #define _DISKMOND_CONF_H
+  29   30  
+<span class='subtracted'>  30      -#pragma ident   "%Z%%M% %I%     %E% SMI"
+  31      -
+</span>  32   31  /*
+  33   32   * Configuration File data
+  34   33   */
+  35   34  
+  36   35  #ifdef __cplusplus
+  37   36  extern "C" {
+  38   37  #endif
+  39   38  
+  40   39  #include &lt;sys/types.h&gt;
+  41   40  #include &lt;pthread.h&gt;
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  42   41  #include &lt;libnvpair.h&gt;
+  43   42  #include &lt;fm/fmd_api.h&gt;
+  44   43  #include "dm_types.h"
+  45   44  #include "util.h"
+  46   45  
+  47   46  #ifndef MIN
+  48   47  #define MIN(x, y) ((x) &lt; (y) ? (x) : (y))
+  49   48  #endif
+  50   49  
+  51   50  #ifndef MAX
+  52   51  #define MAX(x, y) ((x) &gt; (y) ? (x) : (y))
+  53   52  #endif
+  54   53  
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">13 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  55   54  #define DEVICES_PREFIX "/devices"
+  56   55  
+  57   56  #define GLOBAL_PROP_LOG_LEVEL           "log-level"
+  58   57  
+  59   58  /* Property names (and values) for the disk configuration file entity */
+  60   59  #define DISK_PROP_DEVPATH               "dev-path"
+  61   60  #define DISK_PROP_LOGNAME               "logical-path"
+  62   61  #define DISK_PROP_FRUACTION             "fru-update-action"
+  63   62  #define DISK_PROP_OTEMPACTION           "overtemp-action"
+  64   63  #define DISK_PROP_STFAILACTION          "selftest-fail-action"
+<span class='added'>       64 +#define DISK_PROP_SSMWEAROUTACTION      "ssm-wearout-action"
+</span>  65   65  
+  66   66  /* Properties for the "ap" subentity */
+  67   67  #define DISK_AP_PROP_APID "path"
+  68   68  
+  69   69  #define DEVPATH_MINOR_SEPARATOR ':'
+  70   70  
+  71   71  #define DEFAULT_FAULT_POLLING_INTERVAL 3600     /* seconds */
+  72   72  
+  73   73  #define INDICATOR_FAULT_IDENTIFIER "FAULT"
+  74   74  
+</pre>
+<pre id='elided3' class='elided' style='display: none'>  75   75  typedef enum conf_err_e {
+  76   76          E_NO_ERROR = 0,
+  77   77          E_MULTIPLE_IND_LISTS_DEFINED,
+  78   78          E_MULTIPLE_INDRULE_LISTS_DEFINED,
+  79   79          E_INVALID_STATE_CHANGE,
+  80   80          E_IND_MULTIPLY_DEFINED,
+  81   81          E_IND_ACTION_REDUNDANT,
+  82   82          E_IND_ACTION_CONFLICT,
+  83   83          E_IND_MISSING_FAULT_ON,
+  84   84          E_IND_MISSING_FAULT_OFF,
+  85   85          E_INDRULE_REFERENCES_NONEXISTENT_IND_ACTION,
+  86   86          E_DUPLICATE_STATE_TRANSITION
+  87   87  } conf_err_t;
+  88   88  
+  89   89  typedef enum {
+  90   90          INDICATOR_UNKNOWN,
+  91   91          INDICATOR_ON,
+  92   92          INDICATOR_OFF
+  93   93  } ind_state_t;
+  94   94  
+  95   95  typedef enum {
+  96   96          TS_NOT_RUNNING,
+  97   97          TS_RUNNING,
+  98   98          TS_EXIT_REQUESTED,
+  99   99          TS_EXITED
+ 100  100  } thread_state_t;
+ 101  101  
+ 102  102  typedef struct ind_action {
+ 103  103          ind_state_t             ind_state;
+ 104  104          char                    *ind_name;
+ 105  105          struct ind_action       *next;
+ 106  106  } ind_action_t;
+ 107  107  
+ 108  108  typedef struct state_transition {
+ 109  109          hotplug_state_t         begin;
+ 110  110          hotplug_state_t         end;
+ 111  111  } state_transition_t;
+ 112  112  
+ 113  113  typedef struct indrule {
+ 114  114          state_transition_t      strans;
+ 115  115          ind_action_t            *action_list;
+ 116  116          struct indrule          *next;
+ 117  117  } indrule_t;
+ 118  118  
+ 119  119  typedef struct indicator {
+ 120  120          ind_state_t             ind_state;
+ 121  121          char                    *ind_name;
+ 122  122          char                    *ind_instr_spec;
+ 123  123          struct indicator        *next;
+ 124  124  } indicator_t;
+ 125  125  
+ 126  126  typedef struct diskmon {
+ 127  127          /*
+ 128  128           * Static configuration data
+ 129  129           */
+ 130  130          nvlist_t                *props;
+ 131  131          char                    *location;      /* descriptive location */
+ 132  132          nvlist_t                *app_props;
+ 133  133          indicator_t             *ind_list;
+ 134  134          indrule_t               *indrule_list;
+ 135  135          /*
+ 136  136           * Dynamic data
+ 137  137           */
+ 138  138          hotplug_state_t         state;
+ 139  139  
+ 140  140          /*
+ 141  141           * Only one manager can be manipulating the
+ 142  142           * state in the diskmon at one time (either the
+ 143  143           * state-change manager or the fault-polling manager)
+ 144  144           */
+ 145  145          pthread_mutex_t         manager_mutex;
+ 146  146  
+ 147  147          /*
+ 148  148           * Set to true only during initialization, and
+ 149  149           * cleared the next time a fru update needs to
+ 150  150           * occur, this flag enabled an optimization of
+ 151  151           * NOT calling libtopo for a configuration update
+ 152  152           * when the DE starts up.  This allows a HUGE
+ 153  153           * savings (since only a single snapshot-- the
+ 154  154           * initial snapshot) is used as the source of
+ 155  155           * the FRU information.
+ 156  156           */
+ 157  157          boolean_t               initial_configuration;
+ 158  158  
+ 159  159          /* For the state-change manager: */
+ 160  160  
+ 161  161          /*
+ 162  162           * Current state of the fault indicator.
+ 163  163           */
+ 164  164          pthread_mutex_t         fault_indicator_mutex;
+ 165  165          ind_state_t             fault_indicator_state;
+ 166  166  
+ 167  167          /*
+ 168  168           * Set to TRUE when a disk transitions to the CONFIGURED state
+ 169  169           * and remains TRUE until the disk is physically removed.
+ 170  170           */
+ 171  171          boolean_t               configured_yet;
+ 172  172  
+ 173  173          /*
+ 174  174           * The number of disk hotplug state transitions since the disk
+ 175  175           * was inserted.
+ 176  176           */
+ 177  177          uint_t                  state_change_count;
+ 178  178  
+ 179  179          /* Disk FRU (model, manufacturer, etc) information */
+ 180  180          pthread_mutex_t         fru_mutex;
+ 181  181          dm_fru_t                *frup;
+ 182  182  
+ 183  183          struct diskmon          *next;
+ 184  184  } diskmon_t;
+ 185  185  
+ 186  186  typedef struct cfgdata {
+ 187  187          nvlist_t                *props;
+ 188  188          diskmon_t               *disk_list;
+ 189  189  } cfgdata_t;
+ 190  190  
+ 191  191  typedef struct namevalpr {
+ 192  192          char                    *name;
+ 193  193          char                    *value;
+ 194  194  } namevalpr_t;
+ 195  195  
+ 196  196  
+ 197  197  extern indicator_t      *new_indicator(ind_state_t lstate, char *namep,
+ 198  198      char *actionp);
+ 199  199  extern void             link_indicator(indicator_t **first,
+ 200  200      indicator_t *to_add);
+ 201  201  extern void             ind_free(indicator_t *indp);
+ 202  202  
+ 203  203  extern ind_action_t     *new_indaction(ind_state_t state, char *namep);
+ 204  204  extern void             link_indaction(ind_action_t **first,
+ 205  205      ind_action_t *to_add);
+ 206  206  extern void             indaction_free(ind_action_t *lap);
+ 207  207  
+ 208  208  extern indrule_t        *new_indrule(state_transition_t *st,
+ 209  209      ind_action_t *actionp);
+ 210  210  extern void             link_indrule(indrule_t **first, indrule_t *to_add);
+ 211  211  extern void             indrule_free(indrule_t *lrp);
+ 212  212  
+ 213  213  extern diskmon_t        *new_diskmon(nvlist_t *app_props, indicator_t *indp,
+ 214  214      indrule_t *indrp, nvlist_t *nvlp);
+ 215  215  extern void             diskmon_free(diskmon_t *dmp);
+ 216  216  
+ 217  217  extern dm_fru_t         *new_dmfru(char *manu, char *modl, char *firmrev,
+ 218  218      char *serno, uint64_t capa);
+ 219  219  extern void             dmfru_free(dm_fru_t *frup);
+ 220  220  
+ 221  221  extern nvlist_t         *namevalpr_to_nvlist(namevalpr_t *nvprp);
+ 222  222  
+ 223  223  extern conf_err_t       check_state_transition(hotplug_state_t s1,
+ 224  224      hotplug_state_t s2);
+ 225  225  extern conf_err_t       check_inds(indicator_t *indp);
+ 226  226  extern conf_err_t       check_indactions(ind_action_t *indap);
+ 227  227  extern conf_err_t       check_indrules(indrule_t *indrp,
+ 228  228      state_transition_t **offender);
+ 229  229  extern conf_err_t       check_consistent_ind_indrules(indicator_t *indp,
+ 230  230      indrule_t *indrp, ind_action_t **offender);
+ 231  231  
+ 232  232  extern void             cfgdata_add_diskmon(cfgdata_t *cfgp, diskmon_t *dmp);
+ 233  233  
+ 234  234  extern void             conf_error_msg(conf_err_t err, char *buf, int buflen,
+ 235  235      void *arg);
+ 236  236  
+ 237  237  extern const char       *dm_prop_lookup(nvlist_t *props, const char *prop_name);
+ 238  238  extern int              dm_prop_lookup_int(nvlist_t *props,
+ 239  239      const char *prop_name, int *value);
+ 240  240  
+ 241  241  extern int              config_init(void);
+ 242  242  extern int              config_get(fmd_hdl_t *hdl, const fmd_prop_t *fmd_props);
+ 243  243  extern void             config_fini(void);
+ 244  244  
+ 245  245  extern const char *hotplug_state_string(hotplug_state_t state);
+ 246  246  
+ 247  247  extern nvlist_t *dm_global_proplist(void);
+ 248  248  
+ 249  249  #ifdef __cplusplus
+ 250  250  }
+ 251  251  #endif
+ 252  252  
+ 253  253  #endif /* _DISKMOND_CONF_H */
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">179 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 3; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 3; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

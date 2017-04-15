@@ -1,0 +1,280 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Sdiff usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c</title>
+</head><body id="SUNWwebrev">
+<a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+
+<table><tr valign="top">
+<td><pre>
+
+</pre><hr></hr><pre>
+ 410                 is_repair = B_FALSE;
+ 411 
+ 412         /*
+ 413          * We subscribe to zfs faults as well as all repair events.
+ 414          */
+ 415         if (nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 416             &amp;faults, &amp;nfaults) != 0)
+ 417                 return;
+ 418 
+ 419         for (f = 0; f &lt; nfaults; f++) {
+ 420                 fault = faults[f];
+ 421 
+ 422                 fault_device = B_FALSE;
+ 423                 degrade_device = B_FALSE;
+ 424                 is_disk = B_FALSE;
+ 425 
+ 426                 if (nvlist_lookup_boolean_value(fault, FM_SUSPECT_RETIRE,
+ 427                     &amp;retire) == 0 &amp;&amp; retire == 0)
+ 428                         continue;
+ 429 
+
+
+
+
+
+
+
+
+ 430                 /*
+ 431                  * While we subscribe to fault.fs.zfs.*, we only take action
+ 432                  * for faults targeting a specific vdev (open failure or SERD
+ 433                  * failure).  We also subscribe to fault.io.* events, so that
+ 434                  * faulty disks will be faulted in the ZFS configuration.
+ 435                  */
+ 436                 if (fmd_nvl_class_match(hdl, fault, "fault.fs.zfs.vdev.io")) {
+ 437                         fault_device = B_TRUE;
+ 438                 } else if (fmd_nvl_class_match(hdl, fault,
+ 439                     "fault.fs.zfs.vdev.checksum")) {
+ 440                         degrade_device = B_TRUE;
+ 441                 } else if (fmd_nvl_class_match(hdl, fault,
+ 442                     "fault.fs.zfs.device")) {
+ 443                         fault_device = B_FALSE;
+ 444                 } else if (fmd_nvl_class_match(hdl, fault, "fault.io.*")) {
+ 445                         is_disk = B_TRUE;
+ 446                         fault_device = B_TRUE;
+ 447                 } else {
+ 448                         continue;
+ 449                 }
+
+</pre><hr></hr><pre>
+ 544                  */
+ 545                 replace_with_spare(hdl, zhp, vdev);
+ 546                 zpool_close(zhp);
+ 547         }
+ 548 
+ 549         if (strcmp(class, FM_LIST_REPAIRED_CLASS) == 0 &amp;&amp; repair_done &amp;&amp;
+ 550             nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid) == 0)
+ 551                 fmd_case_uuresolved(hdl, uuid);
+ 552 }
+ 553 
+ 554 static const fmd_hdl_ops_t fmd_ops = {
+ 555         zfs_retire_recv,        /* fmdo_recv */
+ 556         NULL,                   /* fmdo_timeout */
+ 557         NULL,                   /* fmdo_close */
+ 558         NULL,                   /* fmdo_stats */
+ 559         NULL,                   /* fmdo_gc */
+ 560 };
+ 561 
+ 562 static const fmd_prop_t fmd_props[] = {
+ 563         { "spare_on_remove", FMD_TYPE_BOOL, "true" },
+
+ 564         { NULL, 0, NULL }
+ 565 };
+ 566 
+ 567 static const fmd_hdl_info_t fmd_info = {
+ 568         "ZFS Retire Agent", "1.0", &amp;fmd_ops, fmd_props
+ 569 };
+ 570 
+ 571 void
+ 572 _fmd_init(fmd_hdl_t *hdl)
+ 573 {
+ 574         zfs_retire_data_t *zdp;
+ 575         libzfs_handle_t *zhdl;
+ 576 
+ 577         if ((zhdl = libzfs_init()) == NULL)
+ 578                 return;
+ 579 
+ 580         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0) {
+ 581                 libzfs_fini(zhdl);
+ 582                 return;
+ 583         }
+</pre></td><td><pre>
+
+</pre><hr></hr><pre>
+ 410                 is_repair = B_FALSE;
+ 411 
+ 412         /*
+ 413          * We subscribe to zfs faults as well as all repair events.
+ 414          */
+ 415         if (nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 416             &amp;faults, &amp;nfaults) != 0)
+ 417                 return;
+ 418 
+ 419         for (f = 0; f &lt; nfaults; f++) {
+ 420                 fault = faults[f];
+ 421 
+ 422                 fault_device = B_FALSE;
+ 423                 degrade_device = B_FALSE;
+ 424                 is_disk = B_FALSE;
+ 425 
+ 426                 if (nvlist_lookup_boolean_value(fault, FM_SUSPECT_RETIRE,
+ 427                     &amp;retire) == 0 &amp;&amp; retire == 0)
+ 428                         continue;
+ 429 
+<span class="new"> 430                 if (fmd_nvl_class_match(hdl, fault,</span>
+<span class="new"> 431                     "fault.io.disk.ssm-wearout") &amp;&amp;</span>
+<span class="new"> 432                     fmd_prop_get_int32(hdl, "ssm_wearout_skip_retire") ==</span>
+<span class="new"> 433                     FMD_B_TRUE) {</span>
+<span class="new"> 434                         fmd_hdl_debug(hdl, "zfs-retire: ignoring SSM fault");</span>
+<span class="new"> 435                         continue;</span>
+<span class="new"> 436                 }</span>
+<span class="new"> 437 </span>
+ 438                 /*
+ 439                  * While we subscribe to fault.fs.zfs.*, we only take action
+ 440                  * for faults targeting a specific vdev (open failure or SERD
+ 441                  * failure).  We also subscribe to fault.io.* events, so that
+ 442                  * faulty disks will be faulted in the ZFS configuration.
+ 443                  */
+ 444                 if (fmd_nvl_class_match(hdl, fault, "fault.fs.zfs.vdev.io")) {
+ 445                         fault_device = B_TRUE;
+ 446                 } else if (fmd_nvl_class_match(hdl, fault,
+ 447                     "fault.fs.zfs.vdev.checksum")) {
+ 448                         degrade_device = B_TRUE;
+ 449                 } else if (fmd_nvl_class_match(hdl, fault,
+ 450                     "fault.fs.zfs.device")) {
+ 451                         fault_device = B_FALSE;
+ 452                 } else if (fmd_nvl_class_match(hdl, fault, "fault.io.*")) {
+ 453                         is_disk = B_TRUE;
+ 454                         fault_device = B_TRUE;
+ 455                 } else {
+ 456                         continue;
+ 457                 }
+
+</pre><hr></hr><pre>
+ 552                  */
+ 553                 replace_with_spare(hdl, zhp, vdev);
+ 554                 zpool_close(zhp);
+ 555         }
+ 556 
+ 557         if (strcmp(class, FM_LIST_REPAIRED_CLASS) == 0 &amp;&amp; repair_done &amp;&amp;
+ 558             nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid) == 0)
+ 559                 fmd_case_uuresolved(hdl, uuid);
+ 560 }
+ 561 
+ 562 static const fmd_hdl_ops_t fmd_ops = {
+ 563         zfs_retire_recv,        /* fmdo_recv */
+ 564         NULL,                   /* fmdo_timeout */
+ 565         NULL,                   /* fmdo_close */
+ 566         NULL,                   /* fmdo_stats */
+ 567         NULL,                   /* fmdo_gc */
+ 568 };
+ 569 
+ 570 static const fmd_prop_t fmd_props[] = {
+ 571         { "spare_on_remove", FMD_TYPE_BOOL, "true" },
+<span class="new"> 572         { "ssm_wearout_skip_retire", FMD_TYPE_BOOL, "true"},</span>
+ 573         { NULL, 0, NULL }
+ 574 };
+ 575 
+ 576 static const fmd_hdl_info_t fmd_info = {
+ 577         "ZFS Retire Agent", "1.0", &amp;fmd_ops, fmd_props
+ 578 };
+ 579 
+ 580 void
+ 581 _fmd_init(fmd_hdl_t *hdl)
+ 582 {
+ 583         zfs_retire_data_t *zdp;
+ 584         libzfs_handle_t *zhdl;
+ 585 
+ 586         if ((zhdl = libzfs_init()) == NULL)
+ 587                 return;
+ 588 
+ 589         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0) {
+ 590                 libzfs_fini(zhdl);
+ 591                 return;
+ 592         }
+</pre></td>
+</tr></table>
+</body></html>

@@ -1,0 +1,621 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c
+</span><span class='added'>          +++ new/usr/src/cmd/fm/modules/common/disk-monitor/disk_monitor.c
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">14 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  
+  22   22  /*
+  23   23   * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+  24   24   * Use is subject to license terms.
+<span class='added'>       25 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  25   26   */
+  26   27  
+  27   28  /*
+  28   29   * Disk Monitor
+  29   30   */
+  30   31  #include &lt;sys/types.h&gt;
+  31   32  #include &lt;sys/stat.h&gt;
+  32   33  #include &lt;fcntl.h&gt;
+  33   34  #include &lt;time.h&gt;
+  34   35  #include &lt;stdio.h&gt;
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  35   36  #include &lt;stdlib.h&gt;
+  36   37  #include &lt;strings.h&gt;
+  37   38  #include &lt;stdarg.h&gt;
+  38   39  #include &lt;errno.h&gt;
+  39   40  #include &lt;signal.h&gt;
+  40   41  #include &lt;unistd.h&gt;
+  41   42  #include &lt;pthread.h&gt;
+  42   43  #include &lt;libnvpair.h&gt;
+  43   44  #include &lt;fm/fmd_api.h&gt;
+  44   45  #include &lt;fm/fmd_fmri.h&gt;
+  45   46  #include &lt;sys/fm/protocol.h&gt;
+  46   47  #include &lt;sys/fm/io/disk.h&gt;
+  47   48  #include &lt;fm/libtopo.h&gt;
+  48   49  
+  49   50  #include "disk_monitor.h"
+  50   51  #include "hotplug_mgr.h"
+  51   52  #include "schg_mgr.h"
+  52   53  #include "topo_gather.h"
+  53   54  #include "dm_platform.h"
+  54   55  
+  55   56  #define THIS_FMD_MODULE_NAME "disk-monitor"
+  56   57  
+  57   58  static enum disk_init_state {
+  58   59          INIT_STATE_NONE = 0,
+  59   60          STATE_CHANGE_MGR_INITTED = 2,
+  60   61          HOTPLUG_MGR_INITTED = 4
+  61   62  } g_init_state = INIT_STATE_NONE;
+  62   63  
+  63   64  typedef enum {
+  64   65          LT_SUSPECT,
+  65   66          LT_REPAIRED
+  66   67  } fm_list_type_t;
+  67   68  
+  68   69  /*
+  69   70   * Global verbosity flag -- controls chattiness of debug messages and
+  70   71   * warnings.  Its value is determined by the fmd property "log-level"
+  71   72   * settable in the DE's .conf file.
+  72   73   */
+  73   74  log_class_t                     g_verbose = 0;
+  74   75  cfgdata_t                       *config_data = NULL;
+  75   76  fmd_hdl_t                       *g_fm_hdl = NULL;
+  76   77  
+  77   78  static const fmd_prop_t         fmd_props[];
+  78   79  
+  79   80  static void
+  80   81  diskmon_teardown_all(void)
+  81   82  {
+  82   83          cleanup_hotplug_manager();
+  83   84          cleanup_state_change_manager(config_data);
+  84   85          config_fini();
+  85   86  }
+  86   87  
+  87   88  static int
+  88   89  count_disks(diskmon_t *disklistp)
+  89   90  {
+  90   91          int i = 0;
+  91   92  
+  92   93          while (disklistp != NULL) {
+  93   94                  i++;
+  94   95                  disklistp = disklistp-&gt;next;
+  95   96          }
+  96   97  
+  97   98          return (i);
+  98   99  }
+  99  100  
+ 100  101  static int
+ 101  102  diskmon_init(void)
+ 102  103  {
+ 103  104          /*
+ 104  105           * Block the generation of state change events (generated by the
+ 105  106           * hotplug manager thread) here; they will be unblocked after the
+ 106  107           * state change manager thread is ready to accept state changes
+ 107  108           * (shortly after it starts).
+ 108  109           */
+ 109  110          block_state_change_events();
+ 110  111  
+ 111  112          if (dm_platform_init() != 0)
+ 112  113                  goto cleanup;
+ 113  114  
+ 114  115          if (init_hotplug_manager() != 0)
+ 115  116                  goto cleanup;
+ 116  117          else
+ 117  118                  g_init_state |= HOTPLUG_MGR_INITTED;
+ 118  119  
+ 119  120          if (init_state_change_manager(config_data) != 0)
+ 120  121                  goto cleanup;
+ 121  122          else
+ 122  123                  g_init_state |= STATE_CHANGE_MGR_INITTED;
+ 123  124  
+ 124  125          return (E_SUCCESS);
+ 125  126  
+ 126  127  cleanup:
+ 127  128  
+ 128  129          unblock_state_change_events();
+ 129  130  
+ 130  131          /*
+ 131  132           * The cleanup order here does matter, due to dependencies between the
+ 132  133           * managers.
+ 133  134           */
+ 134  135          if (g_init_state &amp; HOTPLUG_MGR_INITTED)
+ 135  136                  cleanup_hotplug_manager();
+ 136  137          if (g_init_state &amp; STATE_CHANGE_MGR_INITTED)
+ 137  138                  cleanup_state_change_manager(config_data);
+ 138  139          dm_platform_fini();
+ 139  140  
+ 140  141          return (E_ERROR);
+ 141  142  }
+ 142  143  
+ 143  144  static void
+ 144  145  dm_fault_execute_actions(fmd_hdl_t *hdl, diskmon_t *diskp, nvlist_t *nvl)
+ 145  146  {
+ 146  147          const char              *action_prop = NULL;
+ 147  148          const char              *action_string;
+ 148  149  
+ 149  150          /*
+ 150  151           * The predictive failure action is the activation of the fault
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">116 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 151  152           * indicator.
+ 152  153           */
+ 153  154          if (fmd_nvl_class_match(hdl, nvl,
+ 154  155              DISK_ERROR_CLASS "." FM_FAULT_DISK_OVERTEMP))
+ 155  156                  action_prop = DISK_PROP_OTEMPACTION;
+ 156  157  
+ 157  158          if (fmd_nvl_class_match(hdl, nvl,
+ 158  159              DISK_ERROR_CLASS "." FM_FAULT_DISK_TESTFAIL))
+ 159  160                  action_prop = DISK_PROP_STFAILACTION;
+ 160  161  
+<span class='added'>      162 +        if (fmd_nvl_class_match(hdl, nvl,
+      163 +            DISK_ERROR_CLASS "." FM_FAULT_SSM_WEAROUT))
+      164 +                action_prop = DISK_PROP_SSMWEAROUTACTION;
+      165 +
+</span> 161  166          dm_fault_indicator_set(diskp, INDICATOR_ON);
+ 162  167  
+ 163  168          if (action_prop != NULL &amp;&amp;
+ 164  169              (action_string = dm_prop_lookup(diskp-&gt;props, action_prop))
+ 165  170              != NULL) {
+ 166  171  
+ 167  172                  if (dm_platform_indicator_execute(action_string) != 0) {
+ 168  173                          log_warn("Fault action `%s' did not successfully "
+ 169  174                              "complete.\n", action_string);
+ 170  175                  }
+</pre>
+<pre id='elided3' class='elided' style='display: none'> 171  176          }
+ 172  177  }
+ 173  178  
+ 174  179  static void
+ 175  180  diskmon_agent_repair(fmd_hdl_t *hdl, nvlist_t *nvl, int repair)
+ 176  181  {
+ 177  182          char            *uuid = NULL;
+ 178  183          nvlist_t        **nva;
+ 179  184          uint_t          nvc;
+ 180  185          diskmon_t       *diskp;
+ 181  186          nvlist_t        *fmri;
+ 182  187          nvlist_t        *fltnvl;
+ 183  188          int             err = 0;
+ 184  189  
+ 185  190          err |= nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid);
+ 186  191          err |= nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 187  192              &amp;nva, &amp;nvc);
+ 188  193          if (err != 0)
+ 189  194                  return;
+ 190  195  
+ 191  196          while (nvc-- != 0) {
+ 192  197  
+ 193  198                  fltnvl = *nva++;
+ 194  199  
+ 195  200                  if (nvlist_lookup_nvlist(fltnvl, FM_FAULT_RESOURCE, &amp;fmri)
+ 196  201                      != 0)
+ 197  202                          continue;
+ 198  203  
+ 199  204                  if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 200  205                          continue;
+ 201  206  
+ 202  207                  log_msg(MM_MAIN, "Disk %s repaired!\n",
+ 203  208                      diskp-&gt;location);
+ 204  209  
+ 205  210                  dm_fault_indicator_set(diskp, INDICATOR_OFF);
+ 206  211  
+ 207  212                  dm_state_change(diskp, HPS_REPAIRED);
+ 208  213          }
+ 209  214  
+ 210  215          if (repair)
+ 211  216                  fmd_case_uuresolved(hdl, uuid);
+ 212  217  
+ 213  218  }
+ 214  219  
+ 215  220  static void
+ 216  221  diskmon_agent_suspect(fmd_hdl_t *hdl, nvlist_t *nvl)
+ 217  222  {
+ 218  223          char            *uuid = NULL;
+ 219  224          nvlist_t        **nva;
+ 220  225          uint_t          nvc;
+ 221  226          diskmon_t       *diskp;
+ 222  227          nvlist_t        *fmri;
+ 223  228          nvlist_t        *fltnvl;
+ 224  229          int             err = 0;
+ 225  230  
+ 226  231          err |= nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid);
+ 227  232          err |= nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 228  233              &amp;nva, &amp;nvc);
+ 229  234          if (err != 0)
+ 230  235                  return;
+ 231  236  
+ 232  237          while (nvc-- != 0 &amp;&amp; !fmd_case_uuclosed(hdl, uuid)) {
+ 233  238  
+ 234  239                  fltnvl = *nva++;
+ 235  240  
+ 236  241                  if (nvlist_lookup_nvlist(fltnvl, FM_FAULT_RESOURCE, &amp;fmri) != 0)
+ 237  242                          continue;
+ 238  243  
+ 239  244                  if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 240  245                          continue;
+ 241  246  
+ 242  247                  /* Execute the actions associated with this fault */
+ 243  248                  dm_fault_execute_actions(hdl, diskp,  fltnvl);
+ 244  249  
+ 245  250                  /*
+ 246  251                   * Send a state change event to the state change manager
+ 247  252                   */
+ 248  253                  dm_state_change(diskp, HPS_FAULTED);
+ 249  254          }
+ 250  255  
+ 251  256          if (!fmd_case_uuclosed(hdl, uuid)) {
+ 252  257                  /* Case is closed */
+ 253  258                  fmd_case_uuclose(hdl, uuid);
+ 254  259          }
+ 255  260  }
+ 256  261  
+ 257  262  /*ARGSUSED*/
+ 258  263  static void
+ 259  264  diskmon_recv(fmd_hdl_t *hdl, fmd_event_t *ep, nvlist_t *nvl, const char *class)
+ 260  265  {
+ 261  266          diskmon_t       *diskp;
+ 262  267          nvlist_t        *fmri;
+ 263  268  
+ 264  269          if (g_verbose &amp; MM_MAIN)
+ 265  270                  nvlist_print(stderr, nvl);
+ 266  271  
+ 267  272          /*
+ 268  273           * Act on the fault suspect list or repaired list (embedded agent
+ 269  274           * action).
+ 270  275           */
+ 271  276          if (fmd_nvl_class_match(hdl, nvl, FM_LIST_REPAIRED_CLASS)) {
+ 272  277  
+ 273  278                  diskmon_agent_repair(hdl, nvl, 1);
+ 274  279                  return;
+ 275  280  
+ 276  281          } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_UPDATED_CLASS)) {
+ 277  282  
+ 278  283                  diskmon_agent_repair(hdl, nvl, 0);
+ 279  284                  return;
+ 280  285  
+ 281  286          } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_SUSPECT_CLASS)) {
+ 282  287  
+ 283  288                  diskmon_agent_suspect(hdl, nvl);
+ 284  289                  return;
+ 285  290          } else if (fmd_nvl_class_match(hdl, nvl, FM_LIST_RESOLVED_CLASS)) {
+ 286  291                  return;
+ 287  292          }
+ 288  293  
+ 289  294          /*
+ 290  295           * If we get any replayed faults, set the diskmon's faulted
+ 291  296           * flag for the appropriate fault, then change the diskmon's state
+ 292  297           * to faulted.
+ 293  298           */
+ 294  299          if (fmd_nvl_class_match(hdl, nvl, DISK_ERROR_CLASS ".*")) {
+ 295  300  
+ 296  301                  if (nvlist_lookup_nvlist(nvl, FM_FAULT_RESOURCE,
+ 297  302                      &amp;fmri) != 0)
+ 298  303                          return;
+ 299  304  
+ 300  305                  if ((diskp = dm_fmri_to_diskmon(hdl, fmri)) == NULL)
+ 301  306                          return;
+ 302  307  
+ 303  308                  /* Execute the actions associated with this fault */
+ 304  309                  dm_fault_execute_actions(hdl, diskp, nvl);
+ 305  310  
+ 306  311                  /*
+ 307  312                   * If the fault wasn't generated by this module, send a
+ 308  313                   * state change event to the state change manager
+ 309  314                   */
+ 310  315                  dm_state_change(diskp, HPS_FAULTED);
+ 311  316                  return;
+ 312  317          }
+ 313  318  }
+ 314  319  
+ 315  320  static const fmd_hdl_ops_t fmd_ops = {
+ 316  321          diskmon_recv,   /* fmdo_recv */
+ 317  322          NULL,           /* fmdo_timeout */
+ 318  323          NULL,           /* fmdo_close */
+ 319  324          NULL,           /* fmdo_stats */
+ 320  325          NULL,           /* fmdo_gc */
+ 321  326  };
+ 322  327  
+ 323  328  static const fmd_prop_t fmd_props[] = {
+ 324  329          { GLOBAL_PROP_LOG_LEVEL, FMD_TYPE_UINT32, "0" },
+ 325  330          { NULL, 0, NULL }
+ 326  331  };
+ 327  332  
+ 328  333  static const fmd_hdl_info_t fmd_info = {
+ 329  334          "Disk Monitor",
+ 330  335          DISK_MONITOR_MODULE_VERSION,
+ 331  336          &amp;fmd_ops,
+ 332  337          fmd_props
+ 333  338  };
+ 334  339  
+ 335  340  void
+ 336  341  _fmd_init(fmd_hdl_t *hdl)
+ 337  342  {
+ 338  343          fmd_case_t      *cp;
+ 339  344          int             disk_count;
+ 340  345  
+ 341  346          g_fm_hdl = hdl;
+ 342  347  
+ 343  348          if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0) {
+ 344  349                  return;
+ 345  350          }
+ 346  351  
+ 347  352          if (config_init()) {
+ 348  353                  log_err("Could not initialize configuration!\n");
+ 349  354                  fmd_hdl_unregister(hdl);
+ 350  355                  return;
+ 351  356          }
+ 352  357  
+ 353  358          if (config_get(hdl, fmd_props)) {
+ 354  359                  config_fini();
+ 355  360                  log_err("Could not retrieve configuration from libtopo!\n");
+ 356  361                  fmd_hdl_unregister(hdl);
+ 357  362                  return;
+ 358  363          }
+ 359  364  
+ 360  365          /*
+ 361  366           * If there are no disks to monitor, bail out
+ 362  367           */
+ 363  368          if ((disk_count = count_disks(config_data-&gt;disk_list)) == 0) {
+ 364  369                  config_fini();
+ 365  370                  fmd_hdl_unregister(hdl);
+ 366  371                  return;
+ 367  372          }
+ 368  373  
+ 369  374          if (diskmon_init() == E_ERROR) {
+ 370  375                  config_fini();
+ 371  376                  fmd_hdl_unregister(hdl);
+ 372  377                  return;
+ 373  378          }
+ 374  379  
+ 375  380          log_msg(MM_MAIN, "Monitoring %d disks.\n", disk_count);
+ 376  381  
+ 377  382          /*
+ 378  383           * Iterate over all active cases.
+ 379  384           * Since we automatically solve all cases, these cases must have
+ 380  385           * had the fault added, but the DE must have been interrupted
+ 381  386           * before they were solved.
+ 382  387           */
+ 383  388          for (cp = fmd_case_next(hdl, NULL);
+ 384  389              cp != NULL; cp = fmd_case_next(hdl, cp)) {
+ 385  390  
+ 386  391                  if (!fmd_case_solved(hdl, cp))
+ 387  392                          fmd_case_solve(hdl, cp);
+ 388  393          }
+ 389  394  }
+ 390  395  
+ 391  396  /*ARGSUSED*/
+ 392  397  void
+ 393  398  _fmd_fini(fmd_hdl_t *hdl)
+ 394  399  {
+ 395  400          diskmon_teardown_all();
+ 396  401          g_fm_hdl = NULL;
+ 397  402  }
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">227 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 3; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 3; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

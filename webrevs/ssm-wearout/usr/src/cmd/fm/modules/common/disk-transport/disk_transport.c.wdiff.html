@@ -1,0 +1,633 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c
+</span><span class='added'>          +++ new/usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">13 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  /*
+  22   22   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23   23   * Use is subject to license terms.
+<span class='added'>       24 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  24   25   */
+  25   26  
+<span class='subtracted'>  26      -#pragma ident   "%Z%%M% %I%     %E% SMI"
+  27      -
+</span>  28   27  /*
+  29   28   * Disk error transport module
+  30   29   *
+  31   30   * This transport module is responsible for translating between disk errors
+  32   31   * and FMA ereports.  It is a read-only transport module, and checks for the
+  33   32   * following failures:
+  34   33   *
+<span class='subtracted'>  35      - *      - overtemp
+  36      - *      - predictive failure
+  37      - *      - self-test failure
+</span><span class='added'>       34 + *      - overtemp
+       35 + *      - predictive failure
+       36 + *      - self-test failure
+       37 + *      - solid state media wearout
+</span>  38   38   *
+  39   39   * These failures are detected via the TOPO_METH_DISK_STATUS method, which
+  40   40   * leverages libdiskstatus to do the actual analysis.  This transport module is
+  41   41   * in charge of the following tasks:
+  42   42   *
+<span class='subtracted'>  43      - *      - discovering available devices
+  44      - *      - periodically checking devices
+  45      - *      - managing device addition/removal
+</span><span class='added'>       43 + *      - discovering available devices
+       44 + *      - periodically checking devices
+       45 + *      - managing device addition/removal
+</span>  46   46   */
+  47   47  
+  48   48  #include &lt;ctype.h&gt;
+  49   49  #include &lt;fm/fmd_api.h&gt;
+  50   50  #include &lt;fm/libdiskstatus.h&gt;
+  51   51  #include &lt;fm/libtopo.h&gt;
+  52   52  #include &lt;fm/topo_hc.h&gt;
+  53   53  #include &lt;fm/topo_mod.h&gt;
+  54   54  #include &lt;limits.h&gt;
+  55   55  #include &lt;string.h&gt;
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  56   56  #include &lt;sys/fm/io/scsi.h&gt;
+  57   57  #include &lt;sys/fm/protocol.h&gt;
+  58   58  
+  59   59  static struct dt_stat {
+  60   60          fmd_stat_t dropped;
+  61   61  } dt_stats = {
+  62   62          { "dropped", FMD_TYPE_UINT64, "number of dropped ereports" }
+  63   63  };
+  64   64  
+  65   65  typedef struct disk_monitor {
+  66   66          fmd_hdl_t       *dm_hdl;
+  67   67          fmd_xprt_t      *dm_xprt;
+  68   68          id_t            dm_timer;
+  69   69          hrtime_t        dm_interval;
+  70   70          char            *dm_sim_search;
+  71   71          char            *dm_sim_file;
+  72   72          boolean_t       dm_timer_istopo;
+  73   73  } disk_monitor_t;
+  74   74  
+  75   75  static void
+  76   76  dt_post_ereport(fmd_hdl_t *hdl, fmd_xprt_t *xprt, const char *protocol,
+  77   77      const char *faultname, uint64_t ena, nvlist_t *detector, nvlist_t *payload)
+  78   78  {
+  79   79          nvlist_t *nvl;
+  80   80          int e = 0;
+  81   81          char fullclass[PATH_MAX];
+  82   82  
+  83   83          (void) snprintf(fullclass, sizeof (fullclass), "%s.io.%s.disk.%s",
+  84   84              FM_EREPORT_CLASS, protocol, faultname);
+  85   85  
+  86   86          if (nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0) == 0) {
+  87   87                  e |= nvlist_add_string(nvl, FM_CLASS, fullclass);
+  88   88                  e |= nvlist_add_uint8(nvl, FM_VERSION, FM_EREPORT_VERSION);
+  89   89                  e |= nvlist_add_uint64(nvl, FM_EREPORT_ENA, ena);
+  90   90                  e |= nvlist_add_nvlist(nvl, FM_EREPORT_DETECTOR, detector);
+  91   91                  e |= nvlist_merge(nvl, payload, 0);
+  92   92  
+  93   93                  if (e == 0) {
+  94   94                          fmd_xprt_post(hdl, xprt, nvl, 0);
+  95   95                  } else {
+  96   96                          nvlist_free(nvl);
+  97   97                          dt_stats.dropped.fmds_value.ui64++;
+  98   98                  }
+  99   99          } else {
+ 100  100                  dt_stats.dropped.fmds_value.ui64++;
+ 101  101          }
+ 102  102  }
+ 103  103  
+ 104  104  /*
+ 105  105   * Check a single topo node for failure.  This simply invokes the disk status
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">50 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 106  106   * method, and generates any ereports as necessary.
+ 107  107   */
+ 108  108  static int
+ 109  109  dt_analyze_disk(topo_hdl_t *thp, tnode_t *node, void *arg)
+ 110  110  {
+ 111  111          nvlist_t *result;
+ 112  112          nvlist_t *fmri, *faults;
+ 113  113          char *protocol;
+ 114  114          int err;
+ 115  115          disk_monitor_t *dmp = arg;
+<span class='subtracted'> 116      -        uint64_t ena;
+</span> 117  116          nvpair_t *elem;
+ 118  117          boolean_t fault;
+ 119  118          nvlist_t *details;
+ 120  119          char *fmristr;
+ 121  120          nvlist_t *in = NULL;
+ 122  121  
+ 123  122          if (topo_node_resource(node, &amp;fmri, &amp;err) != 0) {
+ 124  123                  fmd_hdl_error(dmp-&gt;dm_hdl, "failed to get fmri: %s\n",
+ 125  124                      topo_strerror(err));
+ 126  125                  return (TOPO_WALK_ERR);
+</pre>
+<pre id='elided3' class='elided' style='display: none'> 127  126          }
+ 128  127  
+ 129  128          if (topo_hdl_nvalloc(thp, &amp;in, NV_UNIQUE_NAME) != 0) {
+ 130  129                  nvlist_free(fmri);
+ 131  130                  return (TOPO_WALK_ERR);
+ 132  131          }
+ 133  132  
+ 134  133          if (dmp-&gt;dm_sim_search) {
+ 135  134                  fmristr = NULL;
+ 136  135                  if (topo_fmri_nvl2str(thp, fmri, &amp;fmristr, &amp;err) == 0 &amp;&amp;
+ 137  136                      strstr(fmristr, dmp-&gt;dm_sim_search) != 0)
+ 138  137                          (void) nvlist_add_string(in, "path", dmp-&gt;dm_sim_file);
+ 139  138                  topo_hdl_strfree(thp, fmristr);
+ 140  139          }
+ 141  140  
+ 142  141          /*
+ 143  142           * Try to invoke the method.  If this fails (most likely because the
+ 144  143           * method is not supported), then ignore this node.
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">18 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 145  144           */
+ 146  145          if (topo_method_invoke(node, TOPO_METH_DISK_STATUS,
+ 147  146              TOPO_METH_DISK_STATUS_VERSION, in, &amp;result, &amp;err) != 0) {
+ 148  147                  nvlist_free(fmri);
+ 149  148                  nvlist_free(in);
+ 150  149                  return (TOPO_WALK_NEXT);
+ 151  150          }
+ 152  151  
+ 153  152          nvlist_free(in);
+ 154  153  
+<span class='subtracted'> 155      -        ena = fmd_event_ena_create(dmp-&gt;dm_hdl);
+ 156      -
+</span> 157  154          /*
+<span class='subtracted'> 158      -         * Add any faults.
+</span><span class='added'>      155 +         * Check for faults and post ereport(s) if needed
+</span> 159  156           */
+ 160  157          if (nvlist_lookup_nvlist(result, "faults", &amp;faults) == 0 &amp;&amp;
+ 161  158              nvlist_lookup_string(result, "protocol", &amp;protocol) == 0) {
+ 162  159                  elem = NULL;
+ 163  160                  while ((elem = nvlist_next_nvpair(faults, elem)) != NULL) {
+ 164  161                          if (nvpair_type(elem) != DATA_TYPE_BOOLEAN_VALUE)
+ 165  162                                  continue;
+ 166  163  
+ 167  164                          (void) nvpair_value_boolean_value(elem, &amp;fault);
+ 168  165                          if (!fault ||
+ 169  166                              nvlist_lookup_nvlist(result, nvpair_name(elem),
+ 170  167                              &amp;details) != 0)
+ 171  168                                  continue;
+ 172  169  
+<span class='added'>      170 +                        if (strcmp(nvpair_name(elem),
+      171 +                            FM_EREPORT_SCSI_SSMWEAROUT) == 0 &amp;&amp;
+      172 +                            fmd_prop_get_int32(dmp-&gt;dm_hdl,
+      173 +                            "ignore-ssm-wearout") == FMD_B_TRUE)
+      174 +                                continue;
+      175 +
+</span> 173  176                          dt_post_ereport(dmp-&gt;dm_hdl, dmp-&gt;dm_xprt, protocol,
+<span class='subtracted'> 174      -                            nvpair_name(elem), ena, fmri, details);
+</span><span class='added'>      177 +                            nvpair_name(elem),
+      178 +                            fmd_event_ena_create(dmp-&gt;dm_hdl), fmri, details);
+</span> 175  179                  }
+ 176  180          }
+ 177  181  
+ 178  182          nvlist_free(result);
+ 179  183          nvlist_free(fmri);
+ 180  184  
+ 181  185          return (TOPO_WALK_NEXT);
+ 182  186  }
+ 183  187  
+ 184  188  /*
+</pre>
+<pre id='elided4' class='elided' style='display: none'> 185  189   * Periodic timeout.  Iterates over all hc:// topo nodes, calling
+ 186  190   * dt_analyze_disk() for each one.
+ 187  191   */
+ 188  192  /*ARGSUSED*/
+ 189  193  static void
+ 190  194  dt_timeout(fmd_hdl_t *hdl, id_t id, void *data)
+ 191  195  {
+ 192  196          topo_hdl_t *thp;
+ 193  197          topo_walk_t *twp;
+ 194  198          int err;
+ 195  199          disk_monitor_t *dmp = fmd_hdl_getspecific(hdl);
+ 196  200  
+ 197  201          dmp-&gt;dm_hdl = hdl;
+ 198  202  
+ 199  203          thp = fmd_hdl_topo_hold(hdl, TOPO_VERSION);
+ 200  204          if ((twp = topo_walk_init(thp, FM_FMRI_SCHEME_HC, dt_analyze_disk,
+ 201  205              dmp, &amp;err)) == NULL) {
+ 202  206                  fmd_hdl_topo_rele(hdl, thp);
+ 203  207                  fmd_hdl_error(hdl, "failed to get topology: %s\n",
+ 204  208                      topo_strerror(err));
+ 205  209                  return;
+ 206  210          }
+ 207  211  
+ 208  212          if (topo_walk_step(twp, TOPO_WALK_CHILD) == TOPO_WALK_ERR) {
+ 209  213                  topo_walk_fini(twp);
+ 210  214                  fmd_hdl_topo_rele(hdl, thp);
+ 211  215                  fmd_hdl_error(hdl, "failed to walk topology\n");
+ 212  216                  return;
+ 213  217          }
+ 214  218  
+ 215  219          topo_walk_fini(twp);
+ 216  220          fmd_hdl_topo_rele(hdl, thp);
+ 217  221  
+ 218  222          dmp-&gt;dm_timer = fmd_timer_install(hdl, NULL, NULL, dmp-&gt;dm_interval);
+ 219  223          dmp-&gt;dm_timer_istopo = B_FALSE;
+ 220  224  }
+ 221  225  
+ 222  226  /*
+ 223  227   * Called when the topology may have changed.  We want to examine all disks in
+ 224  228   * case a new one has been inserted, but we don't want to overwhelm the system
+ 225  229   * in the event of a flurry of topology changes, as most likely only a small
+ 226  230   * number of disks are changing.  To avoid this, we set the timer for a small
+ 227  231   * but non-trivial interval (by default 1 minute), and ignore intervening
+ 228  232   * changes during this period.  This still gives us a reasonable response time
+ 229  233   * to newly inserted devices without overwhelming the system if lots of hotplug
+ 230  234   * activity is going on.
+ 231  235   */
+ 232  236  /*ARGSUSED*/
+ 233  237  static void
+ 234  238  dt_topo_change(fmd_hdl_t *hdl, topo_hdl_t *thp)
+ 235  239  {
+ 236  240          disk_monitor_t *dmp = fmd_hdl_getspecific(hdl);
+ 237  241  
+ 238  242          if (dmp-&gt;dm_timer_istopo)
+ 239  243                  return;
+ 240  244  
+</pre>
+<table id='hb-elided4' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">56 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 241  245          fmd_timer_remove(hdl, dmp-&gt;dm_timer);
+ 242  246          dmp-&gt;dm_timer = fmd_timer_install(hdl, NULL, NULL,
+ 243  247              fmd_prop_get_int64(hdl, "min-interval"));
+ 244  248          dmp-&gt;dm_timer_istopo = B_TRUE;
+ 245  249  }
+ 246  250  
+ 247  251  static const fmd_prop_t fmd_props[] = {
+ 248  252          { "interval", FMD_TYPE_TIME, "1h" },
+ 249  253          { "min-interval", FMD_TYPE_TIME, "1min" },
+ 250  254          { "simulate", FMD_TYPE_STRING, "" },
+<span class='added'>      255 +        { "ignore-ssm-wearout", FMD_TYPE_BOOL, "false"},
+</span> 251  256          { NULL, 0, NULL }
+ 252  257  };
+ 253  258  
+ 254  259  static const fmd_hdl_ops_t fmd_ops = {
+ 255  260          NULL,                   /* fmdo_recv */
+ 256  261          dt_timeout,             /* fmdo_timeout */
+ 257  262          NULL,                   /* fmdo_close */
+ 258  263          NULL,                   /* fmdo_stats */
+ 259  264          NULL,                   /* fmdo_gc */
+ 260  265          NULL,                   /* fmdo_send */
+ 261  266          dt_topo_change,         /* fmdo_topo_change */
+ 262  267  };
+ 263  268  
+ 264  269  static const fmd_hdl_info_t fmd_info = {
+<span class='subtracted'> 265      -        "Disk Transport Agent", "1.0", &amp;fmd_ops, fmd_props
+</span><span class='added'>      270 +        "Disk Transport Agent", "1.1", &amp;fmd_ops, fmd_props
+</span> 266  271  };
+ 267  272  
+ 268  273  void
+ 269  274  _fmd_init(fmd_hdl_t *hdl)
+ 270  275  {
+ 271  276          disk_monitor_t *dmp;
+ 272  277          char *simulate;
+ 273  278  
+ 274  279          if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0)
+ 275  280                  return;
+</pre>
+<pre id='elided5' class='elided' style='display: none'> 276  281  
+ 277  282          (void) fmd_stat_create(hdl, FMD_STAT_NOALLOC,
+ 278  283              sizeof (dt_stats) / sizeof (fmd_stat_t),
+ 279  284              (fmd_stat_t *)&amp;dt_stats);
+ 280  285  
+ 281  286          dmp = fmd_hdl_zalloc(hdl, sizeof (disk_monitor_t), FMD_SLEEP);
+</pre>
+<table id='hb-elided5' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided5", "hb-elided5", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">6 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided5", "hb-elided5", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 282  287          fmd_hdl_setspecific(hdl, dmp);
+ 283  288  
+ 284  289          dmp-&gt;dm_xprt = fmd_xprt_open(hdl, FMD_XPRT_RDONLY, NULL, NULL);
+ 285  290          dmp-&gt;dm_interval = fmd_prop_get_int64(hdl, "interval");
+ 286  291  
+ 287  292          /*
+ 288  293           * Determine if we have the simulate property set.  This property allows
+ 289  294           * the developer to substitute a faulty device based off all or part of
+ 290  295           * an FMRI string.  For example, one could do:
+ 291  296           *
+<span class='subtracted'> 292      -         *      setprop simulate "bay=4/disk=4  /path/to/sim.so"
+</span><span class='added'>      297 +         *      setprop simulate "bay=4/disk=4  /path/to/sim.so"
+</span> 293  298           *
+ 294  299           * When the transport module encounters an FMRI containing the given
+ 295  300           * string, then it will open the simulator file instead of the
+ 296  301           * corresponding device.  This can be any file, but is intended to be a
+ 297  302           * libdiskstatus simulator shared object, capable of faking up SCSI
+ 298  303           * responses.
+ 299  304           *
+ 300  305           * The property consists of two strings, an FMRI fragment and an
+ 301  306           * absolute path, separated by whitespace.
+ 302  307           */
+</pre>
+<pre id='elided6' class='elided' style='display: none'> 303  308          simulate = fmd_prop_get_string(hdl, "simulate");
+ 304  309          if (simulate[0] != '\0') {
+ 305  310                  const char *sep;
+ 306  311                  size_t len;
+ 307  312  
+ 308  313                  for (sep = simulate; *sep != '\0'; sep++) {
+ 309  314                          if (isspace(*sep))
+ 310  315                                  break;
+ 311  316                  }
+ 312  317  
+ 313  318                  if (*sep != '\0') {
+ 314  319                          len = sep - simulate;
+ 315  320  
+ 316  321                          dmp-&gt;dm_sim_search = fmd_hdl_alloc(hdl,
+ 317  322                              len + 1, FMD_SLEEP);
+ 318  323                          (void) memcpy(dmp-&gt;dm_sim_search, simulate, len);
+ 319  324                          dmp-&gt;dm_sim_search[len] = '\0';
+ 320  325                  }
+ 321  326  
+ 322  327                  for (; *sep != '\0'; sep++) {
+ 323  328                          if (!isspace(*sep))
+ 324  329                                  break;
+ 325  330                  }
+ 326  331  
+ 327  332                  if (*sep != '\0') {
+ 328  333                          dmp-&gt;dm_sim_file = fmd_hdl_strdup(hdl, sep, FMD_SLEEP);
+ 329  334                  } else if (dmp-&gt;dm_sim_search) {
+ 330  335                          fmd_hdl_strfree(hdl, dmp-&gt;dm_sim_search);
+ 331  336                          dmp-&gt;dm_sim_search = NULL;
+ 332  337                  }
+ 333  338          }
+ 334  339          fmd_prop_free_string(hdl, simulate);
+ 335  340  
+ 336  341          /*
+ 337  342           * Call our initial timer routine.  This will do an initial check of all
+ 338  343           * the disks, and then start the periodic timeout.
+ 339  344           */
+ 340  345          dmp-&gt;dm_timer = fmd_timer_install(hdl, NULL, NULL, 0);
+ 341  346  }
+ 342  347  
+ 343  348  void
+ 344  349  _fmd_fini(fmd_hdl_t *hdl)
+ 345  350  {
+ 346  351          disk_monitor_t *dmp;
+ 347  352  
+ 348  353          dmp = fmd_hdl_getspecific(hdl);
+ 349  354          if (dmp) {
+ 350  355                  fmd_xprt_close(hdl, dmp-&gt;dm_xprt);
+ 351  356                  fmd_hdl_strfree(hdl, dmp-&gt;dm_sim_search);
+ 352  357                  fmd_hdl_strfree(hdl, dmp-&gt;dm_sim_file);
+ 353  358                  fmd_hdl_free(hdl, dmp, sizeof (*dmp));
+ 354  359          }
+ 355  360  }
+</pre>
+<table id='hb-elided6' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided6", "hb-elided6", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">53 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided6", "hb-elided6", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 6; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 6; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

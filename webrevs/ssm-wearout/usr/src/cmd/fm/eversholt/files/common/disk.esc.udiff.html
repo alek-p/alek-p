@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Udiff usr/src/cmd/fm/eversholt/files/common/disk.esc</title>
+
+<style type="text/css" media="screen">
+span.new {
+    color: blue;
+    font-weight: normal;
+}
+</style>
+
+</head>
+<body id="SUNWwebrev">
+        <a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+        <pre>
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -18,10 +18,11 @@</span>
+  *
+  * CDDL HEADER END
+  */
+ /*
+  * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+<span class="new">+ * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+  */
+ 
+ #pragma dictionary "DISK"
+ 
+ #define P                       disk
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -42,11 +43,12 @@</span>
+  * ability to attempt data recovery/relocation without faulting a disk.
+  * This implementation depends on a file system retry to the same lba
+  * to trigger a fault when recovery/relocation is not possible.
+  *
+  * We let the engine propagate one error only once every 1 minute and then if we
+<span class="removed">- * still get 2 or more * errors within 24 hours for the same LBA, there is a fault.</span>
+<span class="new">+ * still get 2 or more errors within 24 hours for the same LBA,</span>
+<span class="new">+ * there is a fault.</span>
+  */
+ engine serd.io.scsi.cmd.disk.dev.rqs.merr@P, N=1, T=24h;
+ 
+ /*
+  * disk-as-detector: fault events.
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -183,17 +185,19 @@</span>
+     FITrate=10, FRU=P, ASRU=P;
+ event fault.io.disk.predictive-failure@P, FITrate=10,
+     FITrate=10, FRU=P, ASRU=P;
+ event fault.io.disk.self-test-failure@P, FITrate=10,
+     FITrate=10, FRU=P, ASRU=P;
+<span class="new">+event fault.io.disk.ssm-wearout@P;</span>
+ 
+ /*
+  * ereports.
+  */
+ event ereport.io.scsi.disk.over-temperature@P;
+ event ereport.io.scsi.disk.predictive-failure@P;
+ event ereport.io.scsi.disk.self-test-failure@P;
+<span class="new">+event ereport.io.scsi.disk.ssm-wearout@P;</span>
+ 
+ /*
+  * Propagations.
+  */
+ prop fault.io.disk.over-temperature@P -&gt;
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -204,5 +208,12 @@</span>
+ 
+ prop fault.io.disk.predictive-failure@P -&gt;
+     ereport.io.scsi.disk.predictive-failure@P {
+     setpayloadprop("asc", payloadprop("additional-sense-code")) &amp;&amp;
+     setpayloadprop("ascq", payloadprop("additional-sense-code-qualifier")) };
+<span class="new">+</span>
+<span class="new">+prop fault.io.disk.ssm-wearout@P -&gt;</span>
+<span class="new">+    ereport.io.scsi.disk.ssm-wearout@P {</span>
+<span class="new">+    setpayloadprop("current-wearout-percentage",</span>
+<span class="new">+    payloadprop("current-ssm-wearout"))</span>
+<span class="new">+    &amp;&amp; setpayloadprop("threshold-wearout-percentage",</span>
+<span class="new">+    payloadprop("threshold-ssm-wearout")) };</span>
+</pre></body></html>
+

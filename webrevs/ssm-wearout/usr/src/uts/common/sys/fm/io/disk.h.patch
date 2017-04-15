@@ -1,0 +1,25 @@
+--- old/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 12:29:59 2017
++++ new/usr/src/uts/common/sys/fm/io/disk.h	Sat Apr 15 12:29:59 2017
+@@ -21,13 +21,12 @@
+ /*
+  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+  */
+ 
+ #ifndef	_SYS_FM_IO_DISK_H
+ #define	_SYS_FM_IO_DISK_H
+ 
+-#pragma ident	"%Z%%M%	%I%	%E% SMI"
+-
+ #ifdef	__cplusplus
+ extern "C" {
+ #endif
+@@ -37,6 +36,7 @@
+ #define	FM_FAULT_DISK_PREDFAIL		"predictive-failure"
+ #define	FM_FAULT_DISK_OVERTEMP		"over-temperature"
+ #define	FM_FAULT_DISK_TESTFAIL		"self-test-failure"
++#define	FM_FAULT_SSM_WEAROUT		"ssm-wearout"
+ 
+ #ifdef	__cplusplus
+ }

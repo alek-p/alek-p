@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Udiff usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c</title>
+
+<style type="text/css" media="screen">
+span.new {
+    color: blue;
+    font-weight: normal;
+}
+</style>
+
+</head>
+<body id="SUNWwebrev">
+        <a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+        <pre>
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -19,14 +19,13 @@</span>
+  * CDDL HEADER END
+  */
+ /*
+  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
+<span class="new">+ * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+  */
+ 
+<span class="removed">-#pragma ident   "%Z%%M% %I%     %E% SMI"</span>
+<span class="removed">-</span>
+ /*
+  * Disk status library
+  *
+  * This library is responsible for querying health and other status information
+  * from disk drives.  It is intended to be a generic interface, however only
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -34,10 +33,11 @@</span>
+  * capable of detecting the following status conditions:
+  *
+  *      - Predictive failure
+  *      - Overtemp
+  *      - Self-test failure
+<span class="new">+ *      - Solid State Media wearout</span>
+  */
+ 
+ #include &lt;assert.h&gt;
+ #include &lt;errno.h&gt;
+ #include &lt;fcntl.h&gt;
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -129,10 +129,11 @@</span>
+ {
+         nvlist_free(dsp-&gt;ds_state);
+         nvlist_free(dsp-&gt;ds_predfail);
+         nvlist_free(dsp-&gt;ds_overtemp);
+         nvlist_free(dsp-&gt;ds_testfail);
+<span class="new">+        nvlist_free(dsp-&gt;ds_ssmwearout);</span>
+         if (dsp-&gt;ds_data)
+                 dsp-&gt;ds_transport-&gt;dt_close(dsp-&gt;ds_data);
+         (void) close(dsp-&gt;ds_fd);
+         free(dsp-&gt;ds_path);
+         free(dsp);
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -170,10 +171,12 @@</span>
+          * Scan (or rescan) the current device.
+          */
+         nvlist_free(dsp-&gt;ds_testfail);
+         nvlist_free(dsp-&gt;ds_predfail);
+         nvlist_free(dsp-&gt;ds_overtemp);
+<span class="new">+        nvlist_free(dsp-&gt;ds_ssmwearout);</span>
+<span class="new">+        dsp-&gt;ds_ssmwearout = NULL;</span>
+         dsp-&gt;ds_testfail = dsp-&gt;ds_overtemp = dsp-&gt;ds_predfail = NULL;
+         dsp-&gt;ds_faults = 0;
+ 
+         /*
+          * Even if there is an I/O failure when trying to scan the device, we
+</pre><hr></hr><pre>
+<span class="newmarker">@@ -220,10 +223,19 @@</span>
+                     (dsp-&gt;ds_faults &amp; DS_FAULT_OVERTEMP) != 0)) != 0 ||
+                     (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_OVERTEMP,
+                     dsp-&gt;ds_overtemp)) != 0)
+                         goto nverror;
+         }
+<span class="new">+</span>
+<span class="new">+        if (dsp-&gt;ds_ssmwearout != NULL) {</span>
+<span class="new">+                if ((err = nvlist_add_boolean_value(faults,</span>
+<span class="new">+                    FM_EREPORT_SCSI_SSMWEAROUT,</span>
+<span class="new">+                    (dsp-&gt;ds_faults &amp; DS_FAULT_SSMWEAROUT) != 0)) != 0 ||</span>
+<span class="new">+                    (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_SSMWEAROUT,</span>
+<span class="new">+                    dsp-&gt;ds_ssmwearout)) != 0)</span>
+<span class="new">+                        goto nverror;</span>
+<span class="new">+        }</span>
+ 
+         if ((err = nvlist_add_nvlist(nvl, "faults", faults)) != 0)
+                 goto nverror;
+ 
+         nvlist_free(faults);
+</pre></body></html>
+

@@ -1,0 +1,780 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+    <script type="text/javascript" src="../../../../../../../ancnav.js"></script>
+    </head>
+    <body id="SUNWwebrev" onkeypress="keypress(event);">
+    <a name="0"></a>
+    <pre>XXXX need to add FMA event for SSD wearout</pre><hr></hr>
+<pre>
+   1 /*
+   2  * CDDL HEADER START
+   3  *
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+  23  */
+  24 
+  25 /*
+  26  * The ZFS retire agent is responsible for managing hot spares across all pools.
+  27  * When we see a device fault or a device removal, we try to open the associated
+  28  * pool and look for any hot spares.  We iterate over any available hot spares
+  29  * and attempt a 'zpool replace' for each one.
+  30  *
+  31  * For vdevs diagnosed as faulty, the agent is also responsible for proactively
+  32  * marking the vdev FAULTY (for I/O errors) or DEGRADED (for checksum errors).
+  33  */
+  34 
+  35 #include &lt;fm/fmd_api.h&gt;
+  36 #include &lt;sys/fs/zfs.h&gt;
+  37 #include &lt;sys/fm/protocol.h&gt;
+  38 #include &lt;sys/fm/fs/zfs.h&gt;
+  39 #include &lt;libzfs.h&gt;
+  40 #include &lt;fm/libtopo.h&gt;
+  41 #include &lt;string.h&gt;
+  42 
+  43 typedef struct zfs_retire_repaired {
+  44         struct zfs_retire_repaired      *zrr_next;
+  45         uint64_t                        zrr_pool;
+  46         uint64_t                        zrr_vdev;
+  47 } zfs_retire_repaired_t;
+  48 
+  49 typedef struct zfs_retire_data {
+  50         libzfs_handle_t                 *zrd_hdl;
+  51         zfs_retire_repaired_t           *zrd_repaired;
+  52 } zfs_retire_data_t;
+  53 
+  54 static void
+  55 zfs_retire_clear_data(fmd_hdl_t *hdl, zfs_retire_data_t *zdp)
+  56 {
+  57         zfs_retire_repaired_t *zrp;
+  58 
+  59         while ((zrp = zdp-&gt;zrd_repaired) != NULL) {
+  60                 zdp-&gt;zrd_repaired = zrp-&gt;zrr_next;
+  61                 fmd_hdl_free(hdl, zrp, sizeof (zfs_retire_repaired_t));
+  62         }
+  63 }
+  64 
+  65 /*
+  66  * Find a pool with a matching GUID.
+  67  */
+  68 typedef struct find_cbdata {
+  69         uint64_t        cb_guid;
+  70         const char      *cb_fru;
+  71         zpool_handle_t  *cb_zhp;
+  72         nvlist_t        *cb_vdev;
+  73 } find_cbdata_t;
+  74 
+  75 static int
+  76 find_pool(zpool_handle_t *zhp, void *data)
+  77 {
+  78         find_cbdata_t *cbp = data;
+  79 
+  80         if (cbp-&gt;cb_guid ==
+  81             zpool_get_prop_int(zhp, ZPOOL_PROP_GUID, NULL)) {
+  82                 cbp-&gt;cb_zhp = zhp;
+  83                 return (1);
+  84         }
+  85 
+  86         zpool_close(zhp);
+  87         return (0);
+  88 }
+  89 
+  90 /*
+  91  * Find a vdev within a tree with a matching GUID.
+  92  */
+  93 static nvlist_t *
+  94 find_vdev(libzfs_handle_t *zhdl, nvlist_t *nv, const char *search_fru,
+  95     uint64_t search_guid)
+  96 {
+  97         uint64_t guid;
+  98         nvlist_t **child;
+  99         uint_t c, children;
+ 100         nvlist_t *ret;
+ 101         char *fru;
+ 102 
+ 103         if (search_fru != NULL) {
+ 104                 if (nvlist_lookup_string(nv, ZPOOL_CONFIG_FRU, &amp;fru) == 0 &amp;&amp;
+ 105                     libzfs_fru_compare(zhdl, fru, search_fru))
+ 106                         return (nv);
+ 107         } else {
+ 108                 if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_GUID, &amp;guid) == 0 &amp;&amp;
+ 109                     guid == search_guid)
+ 110                         return (nv);
+ 111         }
+ 112 
+ 113         if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_CHILDREN,
+ 114             &amp;child, &amp;children) != 0)
+ 115                 return (NULL);
+ 116 
+ 117         for (c = 0; c &lt; children; c++) {
+ 118                 if ((ret = find_vdev(zhdl, child[c], search_fru,
+ 119                     search_guid)) != NULL)
+ 120                         return (ret);
+ 121         }
+ 122 
+ 123         if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_L2CACHE,
+ 124             &amp;child, &amp;children) != 0)
+ 125                 return (NULL);
+ 126 
+ 127         for (c = 0; c &lt; children; c++) {
+ 128                 if ((ret = find_vdev(zhdl, child[c], search_fru,
+ 129                     search_guid)) != NULL)
+ 130                         return (ret);
+ 131         }
+ 132 
+ 133         return (NULL);
+ 134 }
+ 135 
+ 136 /*
+ 137  * Given a (pool, vdev) GUID pair, find the matching pool and vdev.
+ 138  */
+ 139 static zpool_handle_t *
+ 140 find_by_guid(libzfs_handle_t *zhdl, uint64_t pool_guid, uint64_t vdev_guid,
+ 141     nvlist_t **vdevp)
+ 142 {
+ 143         find_cbdata_t cb;
+ 144         zpool_handle_t *zhp;
+ 145         nvlist_t *config, *nvroot;
+ 146 
+ 147         /*
+ 148          * Find the corresponding pool and make sure the vdev still exists.
+ 149          */
+ 150         cb.cb_guid = pool_guid;
+ 151         if (zpool_iter(zhdl, find_pool, &amp;cb) != 1)
+ 152                 return (NULL);
+ 153 
+ 154         zhp = cb.cb_zhp;
+ 155         config = zpool_get_config(zhp, NULL);
+ 156         if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
+ 157             &amp;nvroot) != 0) {
+ 158                 zpool_close(zhp);
+ 159                 return (NULL);
+ 160         }
+ 161 
+ 162         if (vdev_guid != 0) {
+ 163                 if ((*vdevp = find_vdev(zhdl, nvroot, NULL,
+ 164                     vdev_guid)) == NULL) {
+ 165                         zpool_close(zhp);
+ 166                         return (NULL);
+ 167                 }
+ 168         }
+ 169 
+ 170         return (zhp);
+ 171 }
+ 172 
+ 173 static int
+ 174 search_pool(zpool_handle_t *zhp, void *data)
+ 175 {
+ 176         find_cbdata_t *cbp = data;
+ 177         nvlist_t *config;
+ 178         nvlist_t *nvroot;
+ 179 
+ 180         config = zpool_get_config(zhp, NULL);
+ 181         if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
+ 182             &amp;nvroot) != 0) {
+ 183                 zpool_close(zhp);
+ 184                 return (0);
+ 185         }
+ 186 
+ 187         if ((cbp-&gt;cb_vdev = find_vdev(zpool_get_handle(zhp), nvroot,
+ 188             cbp-&gt;cb_fru, 0)) != NULL) {
+ 189                 cbp-&gt;cb_zhp = zhp;
+ 190                 return (1);
+ 191         }
+ 192 
+ 193         zpool_close(zhp);
+ 194         return (0);
+ 195 }
+ 196 
+ 197 /*
+ 198  * Given a FRU FMRI, find the matching pool and vdev.
+ 199  */
+ 200 static zpool_handle_t *
+ 201 find_by_fru(libzfs_handle_t *zhdl, const char *fru, nvlist_t **vdevp)
+ 202 {
+ 203         find_cbdata_t cb;
+ 204 
+ 205         cb.cb_fru = fru;
+ 206         cb.cb_zhp = NULL;
+ 207         if (zpool_iter(zhdl, search_pool, &amp;cb) != 1)
+ 208                 return (NULL);
+ 209 
+ 210         *vdevp = cb.cb_vdev;
+ 211         return (cb.cb_zhp);
+ 212 }
+ 213 
+ 214 /*
+ 215  * Given a vdev, attempt to replace it with every known spare until one
+ 216  * succeeds.
+ 217  */
+ 218 static void
+ 219 replace_with_spare(fmd_hdl_t *hdl, zpool_handle_t *zhp, nvlist_t *vdev)
+ 220 {
+ 221         nvlist_t *config, *nvroot, *replacement;
+ 222         nvlist_t **spares;
+ 223         uint_t s, nspares;
+ 224         char *dev_name;
+ 225 
+ 226         config = zpool_get_config(zhp, NULL);
+ 227         if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
+ 228             &amp;nvroot) != 0)
+ 229                 return;
+ 230 
+ 231         /*
+ 232          * Find out if there are any hot spares available in the pool.
+ 233          */
+ 234         if (nvlist_lookup_nvlist_array(nvroot, ZPOOL_CONFIG_SPARES,
+ 235             &amp;spares, &amp;nspares) != 0)
+ 236                 return;
+ 237 
+ 238         replacement = fmd_nvl_alloc(hdl, FMD_SLEEP);
+ 239 
+ 240         (void) nvlist_add_string(replacement, ZPOOL_CONFIG_TYPE,
+ 241             VDEV_TYPE_ROOT);
+ 242 
+ 243         dev_name = zpool_vdev_name(NULL, zhp, vdev, B_FALSE);
+ 244 
+ 245         /*
+ 246          * Try to replace each spare, ending when we successfully
+ 247          * replace it.
+ 248          */
+ 249         for (s = 0; s &lt; nspares; s++) {
+ 250                 char *spare_name;
+ 251 
+ 252                 if (nvlist_lookup_string(spares[s], ZPOOL_CONFIG_PATH,
+ 253                     &amp;spare_name) != 0)
+ 254                         continue;
+ 255 
+ 256                 (void) nvlist_add_nvlist_array(replacement,
+ 257                     ZPOOL_CONFIG_CHILDREN, &amp;spares[s], 1);
+ 258 
+ 259                 if (zpool_vdev_attach(zhp, dev_name, spare_name,
+ 260                     replacement, B_TRUE) == 0)
+ 261                         break;
+ 262         }
+ 263 
+ 264         free(dev_name);
+ 265         nvlist_free(replacement);
+ 266 }
+ 267 
+ 268 /*
+ 269  * Repair this vdev if we had diagnosed a 'fault.fs.zfs.device' and
+ 270  * ASRU is now usable.  ZFS has found the device to be present and
+ 271  * functioning.
+ 272  */
+ 273 /*ARGSUSED*/
+ 274 void
+ 275 zfs_vdev_repair(fmd_hdl_t *hdl, nvlist_t *nvl)
+ 276 {
+ 277         zfs_retire_data_t *zdp = fmd_hdl_getspecific(hdl);
+ 278         zfs_retire_repaired_t *zrp;
+ 279         uint64_t pool_guid, vdev_guid;
+ 280         nvlist_t *asru;
+ 281 
+ 282         if (nvlist_lookup_uint64(nvl, FM_EREPORT_PAYLOAD_ZFS_POOL_GUID,
+ 283             &amp;pool_guid) != 0 || nvlist_lookup_uint64(nvl,
+ 284             FM_EREPORT_PAYLOAD_ZFS_VDEV_GUID, &amp;vdev_guid) != 0)
+ 285                 return;
+ 286 
+ 287         /*
+ 288          * Before checking the state of the ASRU, go through and see if we've
+ 289          * already made an attempt to repair this ASRU.  This list is cleared
+ 290          * whenever we receive any kind of list event, and is designed to
+ 291          * prevent us from generating a feedback loop when we attempt repairs
+ 292          * against a faulted pool.  The problem is that checking the unusable
+ 293          * state of the ASRU can involve opening the pool, which can post
+ 294          * statechange events but otherwise leave the pool in the faulted
+ 295          * state.  This list allows us to detect when a statechange event is
+ 296          * due to our own request.
+ 297          */
+ 298         for (zrp = zdp-&gt;zrd_repaired; zrp != NULL; zrp = zrp-&gt;zrr_next) {
+ 299                 if (zrp-&gt;zrr_pool == pool_guid &amp;&amp;
+ 300                     zrp-&gt;zrr_vdev == vdev_guid)
+ 301                         return;
+ 302         }
+ 303 
+ 304         asru = fmd_nvl_alloc(hdl, FMD_SLEEP);
+ 305 
+ 306         (void) nvlist_add_uint8(asru, FM_VERSION, ZFS_SCHEME_VERSION0);
+ 307         (void) nvlist_add_string(asru, FM_FMRI_SCHEME, FM_FMRI_SCHEME_ZFS);
+ 308         (void) nvlist_add_uint64(asru, FM_FMRI_ZFS_POOL, pool_guid);
+ 309         (void) nvlist_add_uint64(asru, FM_FMRI_ZFS_VDEV, vdev_guid);
+ 310 
+ 311         /*
+ 312          * We explicitly check for the unusable state here to make sure we
+ 313          * aren't responding to a transient state change.  As part of opening a
+ 314          * vdev, it's possible to see the 'statechange' event, only to be
+ 315          * followed by a vdev failure later.  If we don't check the current
+ 316          * state of the vdev (or pool) before marking it repaired, then we risk
+ 317          * generating spurious repair events followed immediately by the same
+ 318          * diagnosis.
+ 319          *
+ 320          * This assumes that the ZFS scheme code associated unusable (i.e.
+ 321          * isolated) with its own definition of faulty state.  In the case of a
+ 322          * DEGRADED leaf vdev (due to checksum errors), this is not the case.
+ 323          * This works, however, because the transient state change is not
+ 324          * posted in this case.  This could be made more explicit by not
+ 325          * relying on the scheme's unusable callback and instead directly
+ 326          * checking the vdev state, where we could correctly account for
+ 327          * DEGRADED state.
+ 328          */
+ 329         if (!fmd_nvl_fmri_unusable(hdl, asru) &amp;&amp; fmd_nvl_fmri_has_fault(hdl,
+ 330             asru, FMD_HAS_FAULT_ASRU, NULL)) {
+ 331                 topo_hdl_t *thp;
+ 332                 char *fmri = NULL;
+ 333                 int err;
+ 334 
+ 335                 thp = fmd_hdl_topo_hold(hdl, TOPO_VERSION);
+ 336                 if (topo_fmri_nvl2str(thp, asru, &amp;fmri, &amp;err) == 0)
+ 337                         (void) fmd_repair_asru(hdl, fmri);
+ 338                 fmd_hdl_topo_rele(hdl, thp);
+ 339 
+ 340                 topo_hdl_strfree(thp, fmri);
+ 341         }
+ 342         nvlist_free(asru);
+ 343         zrp = fmd_hdl_alloc(hdl, sizeof (zfs_retire_repaired_t), FMD_SLEEP);
+ 344         zrp-&gt;zrr_next = zdp-&gt;zrd_repaired;
+ 345         zrp-&gt;zrr_pool = pool_guid;
+ 346         zrp-&gt;zrr_vdev = vdev_guid;
+ 347         zdp-&gt;zrd_repaired = zrp;
+ 348 }
+ 349 
+ 350 /*ARGSUSED*/
+ 351 static void
+ 352 zfs_retire_recv(fmd_hdl_t *hdl, fmd_event_t *ep, nvlist_t *nvl,
+ 353     const char *class)
+ 354 {
+ 355         uint64_t pool_guid, vdev_guid;
+ 356         zpool_handle_t *zhp;
+ 357         nvlist_t *resource, *fault, *fru;
+ 358         nvlist_t **faults;
+ 359         uint_t f, nfaults;
+ 360         zfs_retire_data_t *zdp = fmd_hdl_getspecific(hdl);
+ 361         libzfs_handle_t *zhdl = zdp-&gt;zrd_hdl;
+ 362         boolean_t fault_device, degrade_device;
+ 363         boolean_t is_repair;
+ 364         char *scheme, *fmri;
+ 365         nvlist_t *vdev;
+ 366         char *uuid;
+ 367         int repair_done = 0;
+ 368         boolean_t retire;
+ 369         boolean_t is_disk;
+ 370         vdev_aux_t aux;
+ 371         topo_hdl_t *thp;
+ 372         int err;
+ 373 
+ 374         /*
+ 375          * If this is a resource notifying us of device removal, then simply
+ 376          * check for an available spare and continue.
+ 377          */
+ 378         if (strcmp(class, "resource.fs.zfs.removed") == 0) {
+ 379                 if (nvlist_lookup_uint64(nvl, FM_EREPORT_PAYLOAD_ZFS_POOL_GUID,
+ 380                     &amp;pool_guid) != 0 ||
+ 381                     nvlist_lookup_uint64(nvl, FM_EREPORT_PAYLOAD_ZFS_VDEV_GUID,
+ 382                     &amp;vdev_guid) != 0)
+ 383                         return;
+ 384 
+ 385                 if ((zhp = find_by_guid(zhdl, pool_guid, vdev_guid,
+ 386                     &amp;vdev)) == NULL)
+ 387                         return;
+ 388 
+ 389                 if (fmd_prop_get_int32(hdl, "spare_on_remove"))
+ 390                         replace_with_spare(hdl, zhp, vdev);
+ 391                 zpool_close(zhp);
+ 392                 return;
+ 393         }
+ 394 
+ 395         if (strcmp(class, FM_LIST_RESOLVED_CLASS) == 0)
+ 396                 return;
+ 397 
+ 398         if (strcmp(class, "resource.fs.zfs.statechange") == 0 ||
+ 399             strcmp(class,
+ 400             "resource.sysevent.EC_zfs.ESC_ZFS_vdev_remove") == 0) {
+ 401                 zfs_vdev_repair(hdl, nvl);
+ 402                 return;
+ 403         }
+ 404 
+ 405         zfs_retire_clear_data(hdl, zdp);
+ 406 
+ 407         if (strcmp(class, FM_LIST_REPAIRED_CLASS) == 0)
+ 408                 is_repair = B_TRUE;
+ 409         else
+ 410                 is_repair = B_FALSE;
+ 411 
+ 412         /*
+ 413          * We subscribe to zfs faults as well as all repair events.
+ 414          */
+ 415         if (nvlist_lookup_nvlist_array(nvl, FM_SUSPECT_FAULT_LIST,
+ 416             &amp;faults, &amp;nfaults) != 0)
+ 417                 return;
+ 418 
+ 419         for (f = 0; f &lt; nfaults; f++) {
+ 420                 fault = faults[f];
+ 421 
+ 422                 fault_device = B_FALSE;
+ 423                 degrade_device = B_FALSE;
+ 424                 is_disk = B_FALSE;
+ 425 
+ 426                 if (nvlist_lookup_boolean_value(fault, FM_SUSPECT_RETIRE,
+ 427                     &amp;retire) == 0 &amp;&amp; retire == 0)
+ 428                         continue;
+ 429 
+<a name="1" id="anc1"></a>
+
+
+
+
+
+
+
+ 430                 /*
+ 431                  * While we subscribe to fault.fs.zfs.*, we only take action
+ 432                  * for faults targeting a specific vdev (open failure or SERD
+ 433                  * failure).  We also subscribe to fault.io.* events, so that
+ 434                  * faulty disks will be faulted in the ZFS configuration.
+ 435                  */
+ 436                 if (fmd_nvl_class_match(hdl, fault, "fault.fs.zfs.vdev.io")) {
+ 437                         fault_device = B_TRUE;
+ 438                 } else if (fmd_nvl_class_match(hdl, fault,
+ 439                     "fault.fs.zfs.vdev.checksum")) {
+ 440                         degrade_device = B_TRUE;
+ 441                 } else if (fmd_nvl_class_match(hdl, fault,
+ 442                     "fault.fs.zfs.device")) {
+ 443                         fault_device = B_FALSE;
+ 444                 } else if (fmd_nvl_class_match(hdl, fault, "fault.io.*")) {
+ 445                         is_disk = B_TRUE;
+ 446                         fault_device = B_TRUE;
+ 447                 } else {
+ 448                         continue;
+ 449                 }
+ 450 
+ 451                 if (is_disk) {
+ 452                         /*
+ 453                          * This is a disk fault.  Lookup the FRU, convert it to
+ 454                          * an FMRI string, and attempt to find a matching vdev.
+ 455                          */
+ 456                         if (nvlist_lookup_nvlist(fault, FM_FAULT_FRU,
+ 457                             &amp;fru) != 0 ||
+ 458                             nvlist_lookup_string(fru, FM_FMRI_SCHEME,
+ 459                             &amp;scheme) != 0)
+ 460                                 continue;
+ 461 
+ 462                         if (strcmp(scheme, FM_FMRI_SCHEME_HC) != 0)
+ 463                                 continue;
+ 464 
+ 465                         thp = fmd_hdl_topo_hold(hdl, TOPO_VERSION);
+ 466                         if (topo_fmri_nvl2str(thp, fru, &amp;fmri, &amp;err) != 0) {
+ 467                                 fmd_hdl_topo_rele(hdl, thp);
+ 468                                 continue;
+ 469                         }
+ 470 
+ 471                         zhp = find_by_fru(zhdl, fmri, &amp;vdev);
+ 472                         topo_hdl_strfree(thp, fmri);
+ 473                         fmd_hdl_topo_rele(hdl, thp);
+ 474 
+ 475                         if (zhp == NULL)
+ 476                                 continue;
+ 477 
+ 478                         (void) nvlist_lookup_uint64(vdev,
+ 479                             ZPOOL_CONFIG_GUID, &amp;vdev_guid);
+ 480                         aux = VDEV_AUX_EXTERNAL;
+ 481                 } else {
+ 482                         /*
+ 483                          * This is a ZFS fault.  Lookup the resource, and
+ 484                          * attempt to find the matching vdev.
+ 485                          */
+ 486                         if (nvlist_lookup_nvlist(fault, FM_FAULT_RESOURCE,
+ 487                             &amp;resource) != 0 ||
+ 488                             nvlist_lookup_string(resource, FM_FMRI_SCHEME,
+ 489                             &amp;scheme) != 0)
+ 490                                 continue;
+ 491 
+ 492                         if (strcmp(scheme, FM_FMRI_SCHEME_ZFS) != 0)
+ 493                                 continue;
+ 494 
+ 495                         if (nvlist_lookup_uint64(resource, FM_FMRI_ZFS_POOL,
+ 496                             &amp;pool_guid) != 0)
+ 497                                 continue;
+ 498 
+ 499                         if (nvlist_lookup_uint64(resource, FM_FMRI_ZFS_VDEV,
+ 500                             &amp;vdev_guid) != 0) {
+ 501                                 if (is_repair)
+ 502                                         vdev_guid = 0;
+ 503                                 else
+ 504                                         continue;
+ 505                         }
+ 506 
+ 507                         if ((zhp = find_by_guid(zhdl, pool_guid, vdev_guid,
+ 508                             &amp;vdev)) == NULL)
+ 509                                 continue;
+ 510 
+ 511                         aux = VDEV_AUX_ERR_EXCEEDED;
+ 512                 }
+ 513 
+ 514                 if (vdev_guid == 0) {
+ 515                         /*
+ 516                          * For pool-level repair events, clear the entire pool.
+ 517                          */
+ 518                         (void) zpool_clear(zhp, NULL, NULL);
+ 519                         zpool_close(zhp);
+ 520                         continue;
+ 521                 }
+ 522 
+ 523                 /*
+ 524                  * If this is a repair event, then mark the vdev as repaired and
+ 525                  * continue.
+ 526                  */
+ 527                 if (is_repair) {
+ 528                         repair_done = 1;
+ 529                         (void) zpool_vdev_clear(zhp, vdev_guid);
+ 530                         zpool_close(zhp);
+ 531                         continue;
+ 532                 }
+ 533 
+ 534                 /*
+ 535                  * Actively fault the device if needed.
+ 536                  */
+ 537                 if (fault_device)
+ 538                         (void) zpool_vdev_fault(zhp, vdev_guid, aux);
+ 539                 if (degrade_device)
+ 540                         (void) zpool_vdev_degrade(zhp, vdev_guid, aux);
+ 541 
+ 542                 /*
+ 543                  * Attempt to substitute a hot spare.
+ 544                  */
+ 545                 replace_with_spare(hdl, zhp, vdev);
+ 546                 zpool_close(zhp);
+ 547         }
+ 548 
+ 549         if (strcmp(class, FM_LIST_REPAIRED_CLASS) == 0 &amp;&amp; repair_done &amp;&amp;
+ 550             nvlist_lookup_string(nvl, FM_SUSPECT_UUID, &amp;uuid) == 0)
+ 551                 fmd_case_uuresolved(hdl, uuid);
+ 552 }
+ 553 
+ 554 static const fmd_hdl_ops_t fmd_ops = {
+ 555         zfs_retire_recv,        /* fmdo_recv */
+ 556         NULL,                   /* fmdo_timeout */
+ 557         NULL,                   /* fmdo_close */
+ 558         NULL,                   /* fmdo_stats */
+ 559         NULL,                   /* fmdo_gc */
+ 560 };
+ 561 
+ 562 static const fmd_prop_t fmd_props[] = {
+ 563         { "spare_on_remove", FMD_TYPE_BOOL, "true" },
+<a name="2" id="anc2"></a>
+ 564         { NULL, 0, NULL }
+ 565 };
+ 566 
+ 567 static const fmd_hdl_info_t fmd_info = {
+ 568         "ZFS Retire Agent", "1.0", &amp;fmd_ops, fmd_props
+ 569 };
+ 570 
+ 571 void
+ 572 _fmd_init(fmd_hdl_t *hdl)
+ 573 {
+ 574         zfs_retire_data_t *zdp;
+ 575         libzfs_handle_t *zhdl;
+ 576 
+ 577         if ((zhdl = libzfs_init()) == NULL)
+ 578                 return;
+ 579 
+ 580         if (fmd_hdl_register(hdl, FMD_API_VERSION, &amp;fmd_info) != 0) {
+ 581                 libzfs_fini(zhdl);
+ 582                 return;
+ 583         }
+ 584 
+ 585         zdp = fmd_hdl_zalloc(hdl, sizeof (zfs_retire_data_t), FMD_SLEEP);
+ 586         zdp-&gt;zrd_hdl = zhdl;
+ 587 
+ 588         fmd_hdl_setspecific(hdl, zdp);
+ 589 }
+ 590 
+ 591 void
+ 592 _fmd_fini(fmd_hdl_t *hdl)
+ 593 {
+ 594         zfs_retire_data_t *zdp = fmd_hdl_getspecific(hdl);
+ 595 
+ 596         if (zdp != NULL) {
+ 597                 zfs_retire_clear_data(hdl, zdp);
+ 598                 libzfs_fini(zdp-&gt;zrd_hdl);
+ 599                 fmd_hdl_free(hdl, zdp, sizeof (zfs_retire_data_t));
+ 600         }
+ 601 }
+<a name="3" id="anc3"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre><form name="eof"><input name="value" value="3" type="hidden"></input></form></body></html>

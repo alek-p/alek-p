@@ -1,0 +1,422 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+    <script type="text/javascript" src="../../../../../../ancnav.js"></script>
+    </head>
+    <body id="SUNWwebrev" onkeypress="keypress(event);">
+    <a name="0"></a>
+    <pre>XXXX need to add FMA event for SSD wearout</pre><hr></hr>
+<pre>
+   1 /*
+   2  * CDDL HEADER START
+   3  *
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+<a name="1" id="anc1"></a><span class="new">  24  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+  25  */
+  26 
+<a name="2" id="anc2"></a>
+
+  27 /*
+  28  * Disk status library
+  29  *
+  30  * This library is responsible for querying health and other status information
+  31  * from disk drives.  It is intended to be a generic interface, however only
+  32  * SCSI (and therefore SATA) disks are currently supported.  The library is
+  33  * capable of detecting the following status conditions:
+  34  *
+  35  *      - Predictive failure
+  36  *      - Overtemp
+  37  *      - Self-test failure
+<a name="3" id="anc3"></a><span class="new">  38  *      - Solid State Media wearout</span>
+  39  */
+  40 
+  41 #include &lt;assert.h&gt;
+  42 #include &lt;errno.h&gt;
+  43 #include &lt;fcntl.h&gt;
+  44 #include &lt;libdevinfo.h&gt;
+  45 #include &lt;libdiskstatus.h&gt;
+  46 #include &lt;stdlib.h&gt;
+  47 #include &lt;string.h&gt;
+  48 #include &lt;sys/fm/io/scsi.h&gt;
+  49 #include &lt;sys/stat.h&gt;
+  50 #include &lt;unistd.h&gt;
+  51 
+  52 #include "ds_impl.h"
+  53 #include "ds_scsi.h"
+  54 
+  55 static ds_transport_t *ds_transports[] = {
+  56         &amp;ds_scsi_sim_transport,
+  57         &amp;ds_scsi_uscsi_transport
+  58 };
+  59 
+  60 #define NTRANSPORTS     (sizeof (ds_transports) / sizeof (ds_transports[0]))
+  61 
+  62 /*
+  63  * Open a handle to a disk.  This will fail if the device cannot be opened, or
+  64  * if no suitable transport exists for communicating with the device.
+  65  */
+  66 disk_status_t *
+  67 disk_status_open(const char *path, int *error)
+  68 {
+  69         disk_status_t *dsp;
+  70         ds_transport_t *t;
+  71         int i;
+  72 
+  73         if ((dsp = calloc(sizeof (disk_status_t), 1)) == NULL) {
+  74                 *error = EDS_NOMEM;
+  75                 return (NULL);
+  76         }
+  77 
+  78         if ((dsp-&gt;ds_fd = open(path, O_RDWR)) &lt; 0) {
+  79                 *error = EDS_CANT_OPEN;
+  80                 free(dsp);
+  81                 return (NULL);
+  82         }
+  83 
+  84         if ((dsp-&gt;ds_path = strdup(path)) == NULL) {
+  85                 *error = EDS_NOMEM;
+  86                 disk_status_close(dsp);
+  87                 return (NULL);
+  88         }
+  89 
+  90         for (i = 0; i &lt; NTRANSPORTS; i++) {
+  91                 t = ds_transports[i];
+  92 
+  93                 dsp-&gt;ds_transport = t;
+  94 
+  95                 nvlist_free(dsp-&gt;ds_state);
+  96                 dsp-&gt;ds_state = NULL;
+  97                 if (nvlist_alloc(&amp;dsp-&gt;ds_state, NV_UNIQUE_NAME, 0) != 0) {
+  98                         *error = EDS_NOMEM;
+  99                         disk_status_close(dsp);
+ 100                         return (NULL);
+ 101                 }
+ 102 
+ 103                 if ((dsp-&gt;ds_data = t-&gt;dt_open(dsp)) == NULL) {
+ 104                         if (dsp-&gt;ds_error != EDS_NO_TRANSPORT) {
+ 105                                 *error = dsp-&gt;ds_error;
+ 106                                 disk_status_close(dsp);
+ 107                                 return (NULL);
+ 108                         }
+ 109                 } else {
+ 110                         dsp-&gt;ds_error = 0;
+ 111                         break;
+ 112                 }
+ 113         }
+ 114 
+ 115         if (dsp-&gt;ds_error == EDS_NO_TRANSPORT) {
+ 116                 *error = dsp-&gt;ds_error;
+ 117                 disk_status_close(dsp);
+ 118                 return (NULL);
+ 119         }
+ 120 
+ 121         return (dsp);
+ 122 }
+ 123 
+ 124 /*
+ 125  * Close a handle to a disk.
+ 126  */
+ 127 void
+ 128 disk_status_close(disk_status_t *dsp)
+ 129 {
+ 130         nvlist_free(dsp-&gt;ds_state);
+ 131         nvlist_free(dsp-&gt;ds_predfail);
+ 132         nvlist_free(dsp-&gt;ds_overtemp);
+ 133         nvlist_free(dsp-&gt;ds_testfail);
+<a name="4" id="anc4"></a><span class="new"> 134         nvlist_free(dsp-&gt;ds_ssmwearout);</span>
+ 135         if (dsp-&gt;ds_data)
+ 136                 dsp-&gt;ds_transport-&gt;dt_close(dsp-&gt;ds_data);
+ 137         (void) close(dsp-&gt;ds_fd);
+ 138         free(dsp-&gt;ds_path);
+ 139         free(dsp);
+ 140 }
+ 141 
+ 142 void
+ 143 disk_status_set_debug(boolean_t value)
+ 144 {
+ 145         ds_debug = value;
+ 146 }
+ 147 
+ 148 /*
+ 149  * Query basic information
+ 150  */
+ 151 const char *
+ 152 disk_status_path(disk_status_t *dsp)
+ 153 {
+ 154         return (dsp-&gt;ds_path);
+ 155 }
+ 156 
+ 157 int
+ 158 disk_status_errno(disk_status_t *dsp)
+ 159 {
+ 160         return (dsp-&gt;ds_error);
+ 161 }
+ 162 
+ 163 nvlist_t *
+ 164 disk_status_get(disk_status_t *dsp)
+ 165 {
+ 166         nvlist_t *nvl = NULL;
+ 167         nvlist_t *faults = NULL;
+ 168         int err;
+ 169 
+ 170         /*
+ 171          * Scan (or rescan) the current device.
+ 172          */
+ 173         nvlist_free(dsp-&gt;ds_testfail);
+ 174         nvlist_free(dsp-&gt;ds_predfail);
+ 175         nvlist_free(dsp-&gt;ds_overtemp);
+<a name="5" id="anc5"></a><span class="new"> 176         nvlist_free(dsp-&gt;ds_ssmwearout);</span>
+<span class="new"> 177         dsp-&gt;ds_ssmwearout = NULL;</span>
+ 178         dsp-&gt;ds_testfail = dsp-&gt;ds_overtemp = dsp-&gt;ds_predfail = NULL;
+ 179         dsp-&gt;ds_faults = 0;
+ 180 
+ 181         /*
+ 182          * Even if there is an I/O failure when trying to scan the device, we
+ 183          * can still return the current state.
+ 184          */
+ 185         if (dsp-&gt;ds_transport-&gt;dt_scan(dsp-&gt;ds_data) != 0 &amp;&amp;
+ 186             dsp-&gt;ds_error != EDS_IO)
+ 187                 return (NULL);
+ 188 
+ 189         if ((err = nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0)) != 0)
+ 190                 goto nverror;
+ 191 
+ 192         if ((err = nvlist_add_string(nvl, "protocol", "scsi")) != 0 ||
+ 193             (err = nvlist_add_nvlist(nvl, "status", dsp-&gt;ds_state)) != 0)
+ 194                 goto nverror;
+ 195 
+ 196         /*
+ 197          * Construct the list of faults.
+ 198          */
+ 199         if ((err = nvlist_alloc(&amp;faults, NV_UNIQUE_NAME, 0)) != 0)
+ 200                 goto nverror;
+ 201 
+ 202         if (dsp-&gt;ds_predfail != NULL) {
+ 203                 if ((err = nvlist_add_boolean_value(faults,
+ 204                     FM_EREPORT_SCSI_PREDFAIL,
+ 205                     (dsp-&gt;ds_faults &amp; DS_FAULT_PREDFAIL) != 0)) != 0 ||
+ 206                     (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_PREDFAIL,
+ 207                     dsp-&gt;ds_predfail)) != 0)
+ 208                         goto nverror;
+ 209         }
+ 210 
+ 211         if (dsp-&gt;ds_testfail != NULL) {
+ 212                 if ((err = nvlist_add_boolean_value(faults,
+ 213                     FM_EREPORT_SCSI_TESTFAIL,
+ 214                     (dsp-&gt;ds_faults &amp; DS_FAULT_TESTFAIL) != 0)) != 0 ||
+ 215                     (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_TESTFAIL,
+ 216                     dsp-&gt;ds_testfail)) != 0)
+ 217                         goto nverror;
+ 218         }
+ 219 
+ 220         if (dsp-&gt;ds_overtemp != NULL) {
+ 221                 if ((err = nvlist_add_boolean_value(faults,
+ 222                     FM_EREPORT_SCSI_OVERTEMP,
+ 223                     (dsp-&gt;ds_faults &amp; DS_FAULT_OVERTEMP) != 0)) != 0 ||
+ 224                     (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_OVERTEMP,
+ 225                     dsp-&gt;ds_overtemp)) != 0)
+ 226                         goto nverror;
+ 227         }
+<a name="6" id="anc6"></a><span class="new"> 228 </span>
+<span class="new"> 229         if (dsp-&gt;ds_ssmwearout != NULL) {</span>
+<span class="new"> 230                 if ((err = nvlist_add_boolean_value(faults,</span>
+<span class="new"> 231                     FM_EREPORT_SCSI_SSMWEAROUT,</span>
+<span class="new"> 232                     (dsp-&gt;ds_faults &amp; DS_FAULT_SSMWEAROUT) != 0)) != 0 ||</span>
+<span class="new"> 233                     (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_SSMWEAROUT,</span>
+<span class="new"> 234                     dsp-&gt;ds_ssmwearout)) != 0)</span>
+<span class="new"> 235                         goto nverror;</span>
+<span class="new"> 236         }</span>
+ 237 
+ 238         if ((err = nvlist_add_nvlist(nvl, "faults", faults)) != 0)
+ 239                 goto nverror;
+ 240 
+ 241         nvlist_free(faults);
+ 242         return (nvl);
+ 243 
+ 244 nverror:
+ 245         assert(err == ENOMEM);
+ 246         nvlist_free(nvl);
+ 247         nvlist_free(faults);
+ 248         (void) ds_set_errno(dsp, EDS_NOMEM);
+ 249         return (NULL);
+ 250 }
+<a name="7" id="anc7"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre><form name="eof"><input name="value" value="7" type="hidden"></input></form></body></html>

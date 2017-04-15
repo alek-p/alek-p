@@ -1,0 +1,488 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>ssm-wearout Wdiff usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c</title>
+
+    <meta http-equiv="cache-control" content="no-cache" />
+
+    <style type='text/css' media='screen'>
+      pre	{ margin: 2px; }
+
+      body	{ background-color: #eeeeee; }
+
+      hr	{ border: none 0; border-top: 1px solid #aaa; height: 1px; }
+
+      .subtracted { color: brown }
+      .added	{ color: blue }
+
+      .elided	{ border: 1px solid #444; cursor: pointer; margin: 1px }
+
+      table.hidebar { border: 1px solid #ff9900; background-color: #eee;
+      		  text-align: center; border-collapse: collapse; }
+
+      .hidebar td.active-down { border: 1px solid #ff9900;
+		border-right: 1px solid #ccc; cursor: s-resize }
+
+      .hidebar td.active-down:hover { background-color: #ffcc99; }
+
+      .hidebar td.active-up { border: 1px solid #ff9900; cursor: n-resize;
+		border-left: 1px solid #ccc; }
+
+      .hidebar td.active-up:hover { background-color: #ffcc99; }
+
+      .hidebar td.elided-label { font-style: italic; width: 12em; }
+
+      .cmdbox	{ position: fixed; top: 0; right: 0;
+	          border-left: solid 1px #444;
+	          border-bottom: solid 1px #444;
+      		  background-color: #ccc; text-align: center }
+
+      .cmdbox td { background-color: #eee; border: 1px #444 outset;
+		   cursor: pointer; padding: 3px 4px; }
+      .cmdbox td:hover { background-color: #ffcc99;
+ 		outline: thin solid #ff9900; }
+
+      a:hover { background-color: #ffcc99; }
+
+      a.print { font-size: x-small; }
+    </style>
+
+    <style type='text/css' media='print'>
+	pre { font-family: courier, monospace; font-size: 0.8em; }
+	.cmdbox { display: none; }
+        a.print { display: none; }
+	.hidebar td.active-down { display: none; }
+	.hidebar td.active-up { display: none; }
+        .hidebar td.elided-label { font-style: italic; font-size: small; }
+	table.hidebar { border: none; border-bottom: 1px dotted #000000; }
+	span.added { font-weight: bold;
+	         background-color: #eee; width: 100%; display: block; }
+	span.subtracted { font-style: italic;
+		 background-color: #eee; width: 100%; display: block; }
+	.elided { display: none; }
+        hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+    </style>
+
+    <script type="text/javascript">
+      function show_n_hide_dir(id_to_show, id_to_hide, dir) {
+	      var elt_to_show = document.getElementById(id_to_show);
+	      var elt_to_hide = document.getElementById(id_to_hide);
+	      // When we're opening up, we need to make the bottoms of the
+	      // elements appear to be the same.  So our invariant should be
+	      // elt.offsetBottom - window.scrollY.
+	      var preinvar = elt_to_hide.offsetHeight - window.scrollY;
+	      elt_to_show.style.setProperty('display', '', '');
+	      elt_to_hide.style.setProperty('display', 'none', '');
+	      if (dir == 'up') {
+		      var postinvar = elt_to_show.offsetHeight - window.scrollY;
+		      window.scrollBy(0, postinvar - preinvar);
+	      }
+      }
+
+      function handle_click(e) {
+	      var eh = e.target;
+	      var es = document.getElementById("hb-" + e.target.id);
+	      eh.style.setProperty('display', 'none', '');
+	      es.style.setProperty('display', '', '');
+	      /* Scroll so new element is at cursor. */
+	      window.scroll(0, es.offsetTop + (es.offsetHeight / 2)
+	          - e.clientY);
+      }
+
+      function stripsearch(str) {
+	q = str.indexOf("?");
+	if (q != -1)
+	  str = str.substr(0, q);
+	return (str);
+      }
+
+      function split() {
+        page = stripsearch(location.href);
+	halfway = window.scrollY + window.innerHeight / 2 - 5;
+	document.write('<frameset rows="50%,*">' +
+	  '<frame src="' + page + "?" + window.scrollY + '" />' +
+	  '<frame src="' + page + "?" + halfway + '" />' +
+	  '</frameset>');
+	document.close();
+      }
+
+      function closeframe() {
+	page = stripsearch(location.href);
+
+	otherf = window.parent.frames[0];
+	if (otherf == window)
+	  otherf = window.parent.frames[1];
+
+	parent.location.replace(page + "?" + otherf.scrollY);
+      }
+    </script>
+  </head>
+  <body id='SUNWwebrev'>
+    <a class="print" href="javascript:print()">Print this page</a>
+    <pre>
+XXXX need to add FMA event for SSD wearout
+</pre>
+<hr />
+    <table class='cmdbox'>
+      <tr>
+        <td onclick='split()'>Split</td>
+	<td id='close' onclick='closeframe()'>Close</td>
+      </tr>
+      <tr><td colspan="2" onclick='open_or_close_all(1)'>Expand all</td></tr>
+      <tr><td colspan="2" onclick='open_or_close_all(0)'>Collapse all</td></tr>
+    </table>
+
+    <script type='text/javascript'>
+      if (window == top)
+        document.getElementById('close').style.setProperty('display', 'none', '');
+    </script>
+<pre><span class='subtracted'>          --- old/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c
+</span><span class='added'>          +++ new/usr/src/lib/fm/libdiskstatus/common/libdiskstatus.c
+</span></pre>
+<pre id='elided1' class='elided' style='display: none'>   1    1  /*
+   2    2   * CDDL HEADER START
+   3    3   *
+   4    4   * The contents of this file are subject to the terms of the
+   5    5   * Common Development and Distribution License (the "License").
+   6    6   * You may not use this file except in compliance with the License.
+   7    7   *
+   8    8   * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9    9   * or http://www.opensolaris.org/os/licensing.
+  10   10   * See the License for the specific language governing permissions
+  11   11   * and limitations under the License.
+  12   12   *
+  13   13   * When distributing Covered Code, include this CDDL HEADER in each
+</pre>
+<table id='hb-elided1' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">13 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre>  14   14   * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15   15   * If applicable, add the following below this CDDL HEADER, with the
+  16   16   * fields enclosed by brackets "[]" replaced with your own identifying
+  17   17   * information: Portions Copyright [yyyy] [name of copyright owner]
+  18   18   *
+  19   19   * CDDL HEADER END
+  20   20   */
+  21   21  /*
+  22   22   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23   23   * Use is subject to license terms.
+<span class='added'>       24 + * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
+</span>  24   25   */
+  25   26  
+<span class='subtracted'>  26      -#pragma ident   "%Z%%M% %I%     %E% SMI"
+  27      -
+</span>  28   27  /*
+  29   28   * Disk status library
+  30   29   *
+  31   30   * This library is responsible for querying health and other status information
+  32   31   * from disk drives.  It is intended to be a generic interface, however only
+  33   32   * SCSI (and therefore SATA) disks are currently supported.  The library is
+  34   33   * capable of detecting the following status conditions:
+  35   34   *
+<span class='subtracted'>  36      - *      - Predictive failure
+  37      - *      - Overtemp
+  38      - *      - Self-test failure
+</span><span class='added'>       35 + *      - Predictive failure
+       36 + *      - Overtemp
+       37 + *      - Self-test failure
+       38 + *      - Solid State Media wearout
+</span>  39   39   */
+  40   40  
+  41   41  #include &lt;assert.h&gt;
+  42   42  #include &lt;errno.h&gt;
+  43   43  #include &lt;fcntl.h&gt;
+  44   44  #include &lt;libdevinfo.h&gt;
+  45   45  #include &lt;libdiskstatus.h&gt;
+  46   46  #include &lt;stdlib.h&gt;
+  47   47  #include &lt;string.h&gt;
+  48   48  #include &lt;sys/fm/io/scsi.h&gt;
+</pre>
+<pre id='elided2' class='elided' style='display: none'>  49   49  #include &lt;sys/stat.h&gt;
+  50   50  #include &lt;unistd.h&gt;
+  51   51  
+  52   52  #include "ds_impl.h"
+  53   53  #include "ds_scsi.h"
+  54   54  
+  55   55  static ds_transport_t *ds_transports[] = {
+  56   56          &amp;ds_scsi_sim_transport,
+  57   57          &amp;ds_scsi_uscsi_transport
+  58   58  };
+  59   59  
+  60   60  #define NTRANSPORTS     (sizeof (ds_transports) / sizeof (ds_transports[0]))
+  61   61  
+  62   62  /*
+  63   63   * Open a handle to a disk.  This will fail if the device cannot be opened, or
+  64   64   * if no suitable transport exists for communicating with the device.
+  65   65   */
+  66   66  disk_status_t *
+  67   67  disk_status_open(const char *path, int *error)
+  68   68  {
+  69   69          disk_status_t *dsp;
+  70   70          ds_transport_t *t;
+  71   71          int i;
+  72   72  
+  73   73          if ((dsp = calloc(sizeof (disk_status_t), 1)) == NULL) {
+  74   74                  *error = EDS_NOMEM;
+  75   75                  return (NULL);
+  76   76          }
+  77   77  
+  78   78          if ((dsp-&gt;ds_fd = open(path, O_RDWR)) &lt; 0) {
+  79   79                  *error = EDS_CANT_OPEN;
+  80   80                  free(dsp);
+  81   81                  return (NULL);
+  82   82          }
+  83   83  
+  84   84          if ((dsp-&gt;ds_path = strdup(path)) == NULL) {
+  85   85                  *error = EDS_NOMEM;
+  86   86                  disk_status_close(dsp);
+  87   87                  return (NULL);
+  88   88          }
+  89   89  
+  90   90          for (i = 0; i &lt; NTRANSPORTS; i++) {
+  91   91                  t = ds_transports[i];
+  92   92  
+  93   93                  dsp-&gt;ds_transport = t;
+  94   94  
+  95   95                  nvlist_free(dsp-&gt;ds_state);
+  96   96                  dsp-&gt;ds_state = NULL;
+  97   97                  if (nvlist_alloc(&amp;dsp-&gt;ds_state, NV_UNIQUE_NAME, 0) != 0) {
+  98   98                          *error = EDS_NOMEM;
+  99   99                          disk_status_close(dsp);
+ 100  100                          return (NULL);
+ 101  101                  }
+ 102  102  
+ 103  103                  if ((dsp-&gt;ds_data = t-&gt;dt_open(dsp)) == NULL) {
+ 104  104                          if (dsp-&gt;ds_error != EDS_NO_TRANSPORT) {
+ 105  105                                  *error = dsp-&gt;ds_error;
+ 106  106                                  disk_status_close(dsp);
+ 107  107                                  return (NULL);
+ 108  108                          }
+ 109  109                  } else {
+ 110  110                          dsp-&gt;ds_error = 0;
+ 111  111                          break;
+ 112  112                  }
+ 113  113          }
+ 114  114  
+ 115  115          if (dsp-&gt;ds_error == EDS_NO_TRANSPORT) {
+ 116  116                  *error = dsp-&gt;ds_error;
+ 117  117                  disk_status_close(dsp);
+ 118  118                  return (NULL);
+ 119  119          }
+ 120  120  
+ 121  121          return (dsp);
+ 122  122  }
+ 123  123  
+</pre>
+<table id='hb-elided2' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">75 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 124  124  /*
+ 125  125   * Close a handle to a disk.
+ 126  126   */
+ 127  127  void
+ 128  128  disk_status_close(disk_status_t *dsp)
+ 129  129  {
+ 130  130          nvlist_free(dsp-&gt;ds_state);
+ 131  131          nvlist_free(dsp-&gt;ds_predfail);
+ 132  132          nvlist_free(dsp-&gt;ds_overtemp);
+ 133  133          nvlist_free(dsp-&gt;ds_testfail);
+<span class='added'>      134 +        nvlist_free(dsp-&gt;ds_ssmwearout);
+</span> 134  135          if (dsp-&gt;ds_data)
+ 135  136                  dsp-&gt;ds_transport-&gt;dt_close(dsp-&gt;ds_data);
+ 136  137          (void) close(dsp-&gt;ds_fd);
+ 137  138          free(dsp-&gt;ds_path);
+ 138  139          free(dsp);
+ 139  140  }
+ 140  141  
+ 141  142  void
+ 142  143  disk_status_set_debug(boolean_t value)
+ 143  144  {
+</pre>
+<pre id='elided3' class='elided' style='display: none'> 144  145          ds_debug = value;
+ 145  146  }
+ 146  147  
+ 147  148  /*
+ 148  149   * Query basic information
+ 149  150   */
+ 150  151  const char *
+ 151  152  disk_status_path(disk_status_t *dsp)
+ 152  153  {
+ 153  154          return (dsp-&gt;ds_path);
+ 154  155  }
+ 155  156  
+ 156  157  int
+ 157  158  disk_status_errno(disk_status_t *dsp)
+ 158  159  {
+ 159  160          return (dsp-&gt;ds_error);
+ 160  161  }
+ 161  162  
+ 162  163  nvlist_t *
+ 163  164  disk_status_get(disk_status_t *dsp)
+ 164  165  {
+</pre>
+<table id='hb-elided3' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">21 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided3", "hb-elided3", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 165  166          nvlist_t *nvl = NULL;
+ 166  167          nvlist_t *faults = NULL;
+ 167  168          int err;
+ 168  169  
+ 169  170          /*
+ 170  171           * Scan (or rescan) the current device.
+ 171  172           */
+ 172  173          nvlist_free(dsp-&gt;ds_testfail);
+ 173  174          nvlist_free(dsp-&gt;ds_predfail);
+ 174  175          nvlist_free(dsp-&gt;ds_overtemp);
+<span class='added'>      176 +        nvlist_free(dsp-&gt;ds_ssmwearout);
+      177 +        dsp-&gt;ds_ssmwearout = NULL;
+</span> 175  178          dsp-&gt;ds_testfail = dsp-&gt;ds_overtemp = dsp-&gt;ds_predfail = NULL;
+ 176  179          dsp-&gt;ds_faults = 0;
+ 177  180  
+ 178  181          /*
+ 179  182           * Even if there is an I/O failure when trying to scan the device, we
+ 180  183           * can still return the current state.
+ 181  184           */
+ 182  185          if (dsp-&gt;ds_transport-&gt;dt_scan(dsp-&gt;ds_data) != 0 &amp;&amp;
+ 183  186              dsp-&gt;ds_error != EDS_IO)
+ 184  187                  return (NULL);
+</pre>
+<pre id='elided4' class='elided' style='display: none'> 185  188  
+ 186  189          if ((err = nvlist_alloc(&amp;nvl, NV_UNIQUE_NAME, 0)) != 0)
+ 187  190                  goto nverror;
+ 188  191  
+ 189  192          if ((err = nvlist_add_string(nvl, "protocol", "scsi")) != 0 ||
+ 190  193              (err = nvlist_add_nvlist(nvl, "status", dsp-&gt;ds_state)) != 0)
+ 191  194                  goto nverror;
+ 192  195  
+ 193  196          /*
+ 194  197           * Construct the list of faults.
+ 195  198           */
+ 196  199          if ((err = nvlist_alloc(&amp;faults, NV_UNIQUE_NAME, 0)) != 0)
+ 197  200                  goto nverror;
+ 198  201  
+ 199  202          if (dsp-&gt;ds_predfail != NULL) {
+ 200  203                  if ((err = nvlist_add_boolean_value(faults,
+ 201  204                      FM_EREPORT_SCSI_PREDFAIL,
+ 202  205                      (dsp-&gt;ds_faults &amp; DS_FAULT_PREDFAIL) != 0)) != 0 ||
+ 203  206                      (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_PREDFAIL,
+ 204  207                      dsp-&gt;ds_predfail)) != 0)
+ 205  208                          goto nverror;
+ 206  209          }
+ 207  210  
+ 208  211          if (dsp-&gt;ds_testfail != NULL) {
+ 209  212                  if ((err = nvlist_add_boolean_value(faults,
+ 210  213                      FM_EREPORT_SCSI_TESTFAIL,
+ 211  214                      (dsp-&gt;ds_faults &amp; DS_FAULT_TESTFAIL) != 0)) != 0 ||
+ 212  215                      (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_TESTFAIL,
+ 213  216                      dsp-&gt;ds_testfail)) != 0)
+ 214  217                          goto nverror;
+</pre>
+<table id='hb-elided4' class='hidebar'>
+  <tr>
+    <td class='active-down'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "down")'>
+      &darr;&nbsp;open down&nbsp;&darr;</td>
+    <td class="elided-label">30 lines elided</td>
+    <td class='active-up'
+      onclick='show_n_hide_dir("elided4", "hb-elided4", "up")'>
+      &uarr;&nbsp;open up&nbsp;&uarr;</td>
+  </tr>
+</table>
+<pre> 215  218          }
+ 216  219  
+ 217  220          if (dsp-&gt;ds_overtemp != NULL) {
+ 218  221                  if ((err = nvlist_add_boolean_value(faults,
+ 219  222                      FM_EREPORT_SCSI_OVERTEMP,
+ 220  223                      (dsp-&gt;ds_faults &amp; DS_FAULT_OVERTEMP) != 0)) != 0 ||
+ 221  224                      (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_OVERTEMP,
+ 222  225                      dsp-&gt;ds_overtemp)) != 0)
+ 223  226                          goto nverror;
+ 224  227          }
+<span class='added'>      228 +
+      229 +        if (dsp-&gt;ds_ssmwearout != NULL) {
+      230 +                if ((err = nvlist_add_boolean_value(faults,
+      231 +                    FM_EREPORT_SCSI_SSMWEAROUT,
+      232 +                    (dsp-&gt;ds_faults &amp; DS_FAULT_SSMWEAROUT) != 0)) != 0 ||
+      233 +                    (err = nvlist_add_nvlist(nvl, FM_EREPORT_SCSI_SSMWEAROUT,
+      234 +                    dsp-&gt;ds_ssmwearout)) != 0)
+      235 +                        goto nverror;
+      236 +        }
+</span> 225  237  
+ 226  238          if ((err = nvlist_add_nvlist(nvl, "faults", faults)) != 0)
+ 227  239                  goto nverror;
+ 228  240  
+ 229  241          nvlist_free(faults);
+ 230  242          return (nvl);
+ 231  243  
+ 232  244  nverror:
+ 233  245          assert(err == ENOMEM);
+ 234  246          nvlist_free(nvl);
+ 235  247          nvlist_free(faults);
+ 236  248          (void) ds_set_errno(dsp, EDS_NOMEM);
+ 237  249          return (NULL);
+ 238  250  }
+    </pre>
+<pre id='linerefpre'><span id='lineref'>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></pre>
+    <br clear="all" />
+    <br />
+
+    <script type="text/javascript">
+      /* Assign event handlers and widths. */
+      var w = document.getElementById('lineref').offsetWidth;
+      for (var i = 1; i <= 4; ++i) {
+	      var e = document.getElementById("elided" + i);
+	      e.onclick = handle_click;
+              e.style.setProperty('width', w + "px", '');
+
+	      e = document.getElementById("hb-elided" + i);
+              e.style.setProperty('width', w + "px", '');
+      }
+
+      /* Hide our line size reference. */
+      document.getElementById('linerefpre').style.setProperty('display',
+          'none', '');
+
+      /* Scroll as indicated. */
+      str = location.search;
+      s = str.substring(1, str.length);
+      if (s > 0)
+        window.scroll(0, s);
+
+      function open_or_close_all(open) {
+	      for (var i = 1; i <= 4; ++i) {
+		      var e = document.getElementById("hb-elided" + i);
+		      e.style.setProperty("display", open ? "none" : "", "");
+
+		      e = document.getElementById("elided" + i);
+		      e.style.setProperty("display", open ? "" : "none", "");
+	      }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,510 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="cache-control" content="no-cache"></meta>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=utf-8"></meta>
+<meta http-equiv="Pragma" content="no-cache"></meta>
+<meta http-equiv="Expires" content="-1"></meta>
+<!--
+   Note to customizers: the body of the webrev is IDed as SUNWwebrev
+   to allow easy overriding by users of webrev via the userContent.css
+   mechanism available in some browsers.
+
+   For example, to have all "removed" information be red instead of
+   brown, set a rule in your userContent.css file like:
+
+       body#SUNWwebrev span.removed { color: red ! important; }
+-->
+<style type="text/css" media="screen">
+body {
+    background-color: #eeeeee;
+}
+hr {
+    border: none 0;
+    border-top: 1px solid #aaa;
+    height: 1px;
+}
+div.summary {
+    font-size: .8em;
+    border-bottom: 1px solid #aaa;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+div.summary h2 {
+    margin-bottom: 0.3em;
+}
+div.summary table th {
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+span.lineschanged {
+    font-size: 0.7em;
+}
+span.oldmarker {
+    color: red;
+    font-size: large;
+    font-weight: bold;
+}
+span.newmarker {
+    color: green;
+    font-size: large;
+    font-weight: bold;
+}
+span.removed {
+    color: brown;
+}
+span.changed {
+    color: blue;
+}
+span.new {
+    color: blue;
+    font-weight: bold;
+}
+span.chmod {
+    font-size: 0.7em;
+    color: #db7800;
+}
+a.print { font-size: x-small; }
+a:hover { background-color: #ffcc99; }
+</style>
+
+<style type="text/css" media="print">
+pre { font-size: 0.8em; font-family: courier, monospace; }
+span.removed { color: #444; font-style: italic }
+span.changed { font-weight: bold; }
+span.new { font-weight: bold; }
+span.newmarker { font-size: 1.2em; font-weight: bold; }
+span.oldmarker { font-size: 1.2em; font-weight: bold; }
+a.print {display: none}
+hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
+</style>
+
+<title>ssm-wearout Sdiff usr/src/lib/fm/libdiskstatus/common/ds_scsi.h</title>
+</head><body id="SUNWwebrev">
+<a class="print" href="javascript:print()">Print this page</a>
+<pre>XXXX need to add FMA event for SSD wearout</pre>
+
+<table><tr valign="top">
+<td><pre>
+
+</pre><hr></hr><pre>
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+
+  24  */
+  25 
+  26 #ifndef _DS_SCSI_H
+  27 #define _DS_SCSI_H
+  28 
+<span class="removed">  29 #pragma ident   "%Z%%M% %I%     %E% SMI"</span>
+<span class="removed">  30 </span>
+  31 #include &lt;sys/types.h&gt;
+  32 #include &lt;sys/byteorder.h&gt;
+  33 #include &lt;sys/scsi/scsi.h&gt;
+  34 
+  35 #include "ds_impl.h"
+  36 
+  37 #ifdef  __cplusplus
+  38 extern "C" {
+  39 #endif
+  40 
+  41 #if !defined(_BIT_FIELDS_LTOH) &amp;&amp; !defined(_BIT_FIELDS_HTOL)
+  42 #error  One of _BIT_FIELDS_LTOH or _BIT_FIELDS_HTOL must be defined
+  43 #endif
+  44 
+  45 /*
+  46  * Log page structures
+  47  */
+  48 #pragma pack(1)
+  49 
+  50 typedef struct scsi_log_header {
+  51 #if defined(_BIT_FIELDS_LTOH)
+  52         uint8_t         lh_code : 6,
+<span class="changed">  53                         __reserved : 2;</span>
+
+  54 #else
+<span class="changed">  55         uint8_t         __reserved : 2,</span>
+
+  56                         lh_code : 6;
+  57 #endif
+<span class="changed">  58         uint8_t         __reserved2;</span>
+  59         uint16_t        lh_length;
+  60 } scsi_log_header_t;
+  61 
+  62 typedef struct scsi_log_parameter_header {
+  63         uint16_t        lph_param;
+  64 #if defined(_BIT_FIELDS_LTOH)
+  65         uint8_t         lph_lp  : 1,
+  66                         lph_lbin : 1,
+  67                         lph_tmc : 2,
+  68                         lph_etc : 1,
+  69                         lph_tsd : 1,
+  70                         lph_ds  : 1,
+  71                         lph_du  : 1;
+  72 #else
+  73         uint8_t         lph_du  : 1,
+  74                         lph_ds  : 1,
+  75                         lph_tsd : 1,
+  76                         lph_etc : 1,
+  77                         lph_tmc : 2,
+  78                         lph_lbin : 1,
+
+</pre><hr></hr><pre>
+ 141 #define SELFTEST_FAILURE_INCOMPLETE     0x3
+ 142 #define SELFTEST_FAILURE_SEG_UNKNOWN    0x4
+ 143 #define SELFTEST_FAILURE_SEG_FIRST      0x5
+ 144 #define SELFTEST_FAILURE_SEG_SECOND     0x6
+ 145 #define SELFTEST_FAILURE_SEG_OTHER      0x7
+ 146 #define SELFTEST_INPROGRESS             0xf
+ 147 
+ 148 #define SELFTEST_COMPLETE(code)                         \
+ 149         ((code) == SELFTEST_OK ||                       \
+ 150         ((code) &gt;= SELFTEST_FAILURE_INCOMPLETE &amp;&amp;    \
+ 151         ((code) &lt;= SELFTEST_FAILURE_SEG_OTHER)))
+ 152 
+ 153 #define LOGPARAM_TEMP_CURTEMP           0x0000
+ 154 #define LOGPARAM_TEMP_REFTEMP           0x0001
+ 155 
+ 156 #define LOGPARAM_TEMP_LEN       \
+ 157         (sizeof (scsi_temp_log_param_t) - \
+ 158             sizeof (scsi_log_parameter_header_t))
+ 159 
+ 160 /*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 161  * Mode sense/select page header information
+ 162  */
+ 163 typedef struct scsi_ms_header {
+ 164         struct mode_header      ms_header;
+ 165         struct block_descriptor ms_descriptor;
+ 166 } scsi_ms_header_t;
+ 167 
+ 168 typedef struct scsi_ms_header_g1 {
+ 169         struct mode_header_g1   ms_header;
+ 170         struct block_descriptor ms_descriptor;
+ 171 } scsi_ms_header_g1_t;
+ 172 
+ 173 typedef struct scsi_ms_hdrs {
+ 174         int                             ms_length;
+ 175         union {
+ 176                 scsi_ms_header_t        g0;
+ 177                 scsi_ms_header_g1_t     g1;
+ 178         } ms_hdr;
+ 179 } scsi_ms_hdrs_t;
+ 180 
+
+</pre><hr></hr><pre>
+ 261 /*
+ 262  * Mode Sense Page Control
+ 263  */
+ 264 #define PC_CURRENT              (0 &lt;&lt; 6)
+ 265 #define PC_CHANGEABLE           (1 &lt;&lt; 6)
+ 266 #define PC_DEFAULT              (2 &lt;&lt; 6)
+ 267 #define PC_SAVED                (3 &lt;&lt; 6)
+ 268 
+ 269 /*
+ 270  * Log Sense Page Control
+ 271  */
+ 272 #define PC_CUMULATIVE           (1 &lt;&lt; 6)
+ 273 
+ 274 /*
+ 275  * LOG page codes
+ 276  */
+ 277 #define LOGPAGE_SUPP_LIST       0x00
+ 278 #define LOGPAGE_TEMP            0x0d
+ 279 #define LOGPAGE_SELFTEST        0x10
+ 280 #define LOGPAGE_IE              0x2f
+
+
+ 281 
+ 282 /* ASC constants */
+ 283 #define ASC_INVALID_OPCODE                              0x20
+ 284 #define ASC_INVALID_CDB_FIELD                           0x24
+ 285 #define ASC_FAILURE_PREDICTION_THRESHOLD_EXCEEDED       0x5d
+ 286 
+ 287 /* ASCQ constants */
+ 288 #define ASCQ_INVALID_OPCODE     0
+ 289 
+ 290 /* Error tests */
+ 291 #define SCSI_INVALID_OPCODE(s, a, aq) \
+ 292         (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_OPCODE) &amp;&amp; \
+ 293         ((aq) == ASCQ_INVALID_OPCODE))
+ 294 
+ 295 #define MODE_PAGE_UNSUPPORTED(s, a, aq) \
+ 296         (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_CDB_FIELD))
+ 297 
+ 298 /* command length to use */
+ 299 #define MODE_CMD_LEN_UNKNOWN            0
+ 300 #define MODE_CMD_LEN_6                  1
+ 301 #define MODE_CMD_LEN_10                 2
+ 302 
+ 303 /* supported modepages bitmask */
+ 304 #define MODEPAGE_SUPP_IEC               0x1
+ 305 
+ 306 /* supported logpages bitmask */
+ 307 #define LOGPAGE_SUPP_IE                 0x1
+ 308 #define LOGPAGE_SUPP_TEMP               0x2
+ 309 #define LOGPAGE_SUPP_SELFTEST           0x4
+
+ 310 
+ 311 #define MSG_BUFLEN      256
+ 312 
+ 313 /*
+ 314  * For SCSI commands which want to accept arbitrary length responses, we need to
+ 315  * allocate an appropriate sized buffer.  The maximum length is USHRT_MAX,
+ 316  * because some devices return nothing if the buffer length is too big.
+ 317  */
+ 318 #define MAX_BUFLEN(type)        (USHRT_MAX - sizeof (type))
+ 319 
+ 320 extern ds_transport_t ds_scsi_uscsi_transport;
+ 321 extern ds_transport_t ds_scsi_sim_transport;
+ 322 
+ 323 #ifdef  __cplusplus
+ 324 }
+ 325 #endif
+ 326 
+ 327 #endif  /* _DS_SCSI_H */
+</pre></td><td><pre>
+
+</pre><hr></hr><pre>
+   4  * The contents of this file are subject to the terms of the
+   5  * Common Development and Distribution License (the "License").
+   6  * You may not use this file except in compliance with the License.
+   7  *
+   8  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+   9  * or http://www.opensolaris.org/os/licensing.
+  10  * See the License for the specific language governing permissions
+  11  * and limitations under the License.
+  12  *
+  13  * When distributing Covered Code, include this CDDL HEADER in each
+  14  * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  15  * If applicable, add the following below this CDDL HEADER, with the
+  16  * fields enclosed by brackets "[]" replaced with your own identifying
+  17  * information: Portions Copyright [yyyy] [name of copyright owner]
+  18  *
+  19  * CDDL HEADER END
+  20  */
+  21 /*
+  22  * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+  23  * Use is subject to license terms.
+<span class="new">  24  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
+  25  */
+  26 
+  27 #ifndef _DS_SCSI_H
+  28 #define _DS_SCSI_H
+  29 
+
+
+  30 #include &lt;sys/types.h&gt;
+  31 #include &lt;sys/byteorder.h&gt;
+  32 #include &lt;sys/scsi/scsi.h&gt;
+  33 
+  34 #include "ds_impl.h"
+  35 
+  36 #ifdef  __cplusplus
+  37 extern "C" {
+  38 #endif
+  39 
+  40 #if !defined(_BIT_FIELDS_LTOH) &amp;&amp; !defined(_BIT_FIELDS_HTOL)
+  41 #error  One of _BIT_FIELDS_LTOH or _BIT_FIELDS_HTOL must be defined
+  42 #endif
+  43 
+  44 /*
+  45  * Log page structures
+  46  */
+  47 #pragma pack(1)
+  48 
+  49 typedef struct scsi_log_header {
+  50 #if defined(_BIT_FIELDS_LTOH)
+  51         uint8_t         lh_code : 6,
+<span class="changed">  52                         lh_spf : 1,</span>
+<span class="changed">  53                         lh_ds : 1;</span>
+  54 #else
+<span class="changed">  55         uint8_t         lh_ds : 1,</span>
+<span class="changed">  56                         lh_spf : 1,</span>
+  57                         lh_code : 6;
+  58 #endif
+<span class="changed">  59         uint8_t         lh_subpage;</span>
+  60         uint16_t        lh_length;
+  61 } scsi_log_header_t;
+  62 
+  63 typedef struct scsi_log_parameter_header {
+  64         uint16_t        lph_param;
+  65 #if defined(_BIT_FIELDS_LTOH)
+  66         uint8_t         lph_lp  : 1,
+  67                         lph_lbin : 1,
+  68                         lph_tmc : 2,
+  69                         lph_etc : 1,
+  70                         lph_tsd : 1,
+  71                         lph_ds  : 1,
+  72                         lph_du  : 1;
+  73 #else
+  74         uint8_t         lph_du  : 1,
+  75                         lph_ds  : 1,
+  76                         lph_tsd : 1,
+  77                         lph_etc : 1,
+  78                         lph_tmc : 2,
+  79                         lph_lbin : 1,
+
+</pre><hr></hr><pre>
+ 142 #define SELFTEST_FAILURE_INCOMPLETE     0x3
+ 143 #define SELFTEST_FAILURE_SEG_UNKNOWN    0x4
+ 144 #define SELFTEST_FAILURE_SEG_FIRST      0x5
+ 145 #define SELFTEST_FAILURE_SEG_SECOND     0x6
+ 146 #define SELFTEST_FAILURE_SEG_OTHER      0x7
+ 147 #define SELFTEST_INPROGRESS             0xf
+ 148 
+ 149 #define SELFTEST_COMPLETE(code)                         \
+ 150         ((code) == SELFTEST_OK ||                       \
+ 151         ((code) &gt;= SELFTEST_FAILURE_INCOMPLETE &amp;&amp;    \
+ 152         ((code) &lt;= SELFTEST_FAILURE_SEG_OTHER)))
+ 153 
+ 154 #define LOGPARAM_TEMP_CURTEMP           0x0000
+ 155 #define LOGPARAM_TEMP_REFTEMP           0x0001
+ 156 
+ 157 #define LOGPARAM_TEMP_LEN       \
+ 158         (sizeof (scsi_temp_log_param_t) - \
+ 159             sizeof (scsi_log_parameter_header_t))
+ 160 
+ 161 /*
+<span class="new"> 162  * Described in SBC3</span>
+<span class="new"> 163  */</span>
+<span class="new"> 164 typedef struct scsi_ssm_log_param {</span>
+<span class="new"> 165         scsi_log_parameter_header_t ssm_hdr;</span>
+<span class="new"> 166         uint16_t                __reserved2;</span>
+<span class="new"> 167         uint8_t                 __reserved1;</span>
+<span class="new"> 168         uchar_t                 ssm_prcnt_used;</span>
+<span class="new"> 169 } scsi_ssm_log_param_t;</span>
+<span class="new"> 170 </span>
+<span class="new"> 171 #define LOGPARAM_PRCNT_USED             0x0001</span>
+<span class="new"> 172 #define LOGPARAM_PRCNT_USED_PARAM_LEN   0x04</span>
+<span class="new"> 173 #define PRCNT_USED_FAULT_THRSH          90</span>
+<span class="new"> 174 </span>
+<span class="new"> 175 /*</span>
+ 176  * Mode sense/select page header information
+ 177  */
+ 178 typedef struct scsi_ms_header {
+ 179         struct mode_header      ms_header;
+ 180         struct block_descriptor ms_descriptor;
+ 181 } scsi_ms_header_t;
+ 182 
+ 183 typedef struct scsi_ms_header_g1 {
+ 184         struct mode_header_g1   ms_header;
+ 185         struct block_descriptor ms_descriptor;
+ 186 } scsi_ms_header_g1_t;
+ 187 
+ 188 typedef struct scsi_ms_hdrs {
+ 189         int                             ms_length;
+ 190         union {
+ 191                 scsi_ms_header_t        g0;
+ 192                 scsi_ms_header_g1_t     g1;
+ 193         } ms_hdr;
+ 194 } scsi_ms_hdrs_t;
+ 195 
+
+</pre><hr></hr><pre>
+ 276 /*
+ 277  * Mode Sense Page Control
+ 278  */
+ 279 #define PC_CURRENT              (0 &lt;&lt; 6)
+ 280 #define PC_CHANGEABLE           (1 &lt;&lt; 6)
+ 281 #define PC_DEFAULT              (2 &lt;&lt; 6)
+ 282 #define PC_SAVED                (3 &lt;&lt; 6)
+ 283 
+ 284 /*
+ 285  * Log Sense Page Control
+ 286  */
+ 287 #define PC_CUMULATIVE           (1 &lt;&lt; 6)
+ 288 
+ 289 /*
+ 290  * LOG page codes
+ 291  */
+ 292 #define LOGPAGE_SUPP_LIST       0x00
+ 293 #define LOGPAGE_TEMP            0x0d
+ 294 #define LOGPAGE_SELFTEST        0x10
+ 295 #define LOGPAGE_IE              0x2f
+<span class="new"> 296 /* Solid State Media log page code */</span>
+<span class="new"> 297 #define LOGPAGE_SSM             0x11</span>
+ 298 
+ 299 /* ASC constants */
+ 300 #define ASC_INVALID_OPCODE                              0x20
+ 301 #define ASC_INVALID_CDB_FIELD                           0x24
+ 302 #define ASC_FAILURE_PREDICTION_THRESHOLD_EXCEEDED       0x5d
+ 303 
+ 304 /* ASCQ constants */
+ 305 #define ASCQ_INVALID_OPCODE     0
+ 306 
+ 307 /* Error tests */
+ 308 #define SCSI_INVALID_OPCODE(s, a, aq) \
+ 309         (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_OPCODE) &amp;&amp; \
+ 310         ((aq) == ASCQ_INVALID_OPCODE))
+ 311 
+ 312 #define MODE_PAGE_UNSUPPORTED(s, a, aq) \
+ 313         (((s) == KEY_ILLEGAL_REQUEST) &amp;&amp; ((a) == ASC_INVALID_CDB_FIELD))
+ 314 
+ 315 /* command length to use */
+ 316 #define MODE_CMD_LEN_UNKNOWN            0
+ 317 #define MODE_CMD_LEN_6                  1
+ 318 #define MODE_CMD_LEN_10                 2
+ 319 
+ 320 /* supported modepages bitmask */
+ 321 #define MODEPAGE_SUPP_IEC               0x1
+ 322 
+ 323 /* supported logpages bitmask */
+ 324 #define LOGPAGE_SUPP_IE                 0x1
+ 325 #define LOGPAGE_SUPP_TEMP               0x2
+ 326 #define LOGPAGE_SUPP_SELFTEST           0x4
+<span class="new"> 327 #define LOGPAGE_SUPP_SSM                0x8</span>
+ 328 
+ 329 #define MSG_BUFLEN      256
+ 330 
+ 331 /*
+ 332  * For SCSI commands which want to accept arbitrary length responses, we need to
+ 333  * allocate an appropriate sized buffer.  The maximum length is USHRT_MAX,
+ 334  * because some devices return nothing if the buffer length is too big.
+ 335  */
+ 336 #define MAX_BUFLEN(type)        (USHRT_MAX - sizeof (type))
+ 337 
+ 338 extern ds_transport_t ds_scsi_uscsi_transport;
+ 339 extern ds_transport_t ds_scsi_sim_transport;
+ 340 
+ 341 #ifdef  __cplusplus
+ 342 }
+ 343 #endif
+ 344 
+ 345 #endif  /* _DS_SCSI_H */
+</pre></td>
+</tr></table>
+</body></html>
