@@ -110,43 +110,40 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
   21 #
   22 # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
   23 # Use is subject to license terms.
-<a name="1" id="anc1"></a><span class="new">  24 # Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
-  25 #
-<a name="2" id="anc2"></a>
-  26 
-  27 include         ../../Makefile.lib
-  28 include         ../Makefile.lib
-  29 
-  30 HDRDIR=         common
-  31 FMHDRS=         libdiskstatus.h
-  32 
-  33 SUBDIRS=        $(MACH)
-  34 $(BUILD64)SUBDIRS += $(MACH64)
-  35 
-<a name="3" id="anc3"></a><span class="new">  36 $(RELEASE_BUILD)CPPFLAGS += -DNDEBUG</span>
-<span class="new">  37 </span>
-  38 all :=          TARGET= all
-  39 clean :=        TARGET= clean
-  40 clobber :=      TARGET= clobber
-  41 install :=      TARGET= install
-  42 lint :=         TARGET= lint
-  43 
-  44 .KEEP_STATE:
-  45 
-  46 all clean clobber install lint: $(SUBDIRS) 
-  47 
-  48 install_h: $(ROOTFMHDRS)
-  49 
-  50 check: $(CHECKHDRS)
+  24 #
+<a name="1" id="anc1"></a>
+  25 
+  26 include         ../../Makefile.lib
+  27 include         ../Makefile.lib
+  28 
+  29 HDRDIR=         common
+  30 FMHDRS=         libdiskstatus.h
+  31 
+  32 SUBDIRS=        $(MACH)
+  33 $(BUILD64)SUBDIRS += $(MACH64)
+  34 
+  35 all :=          TARGET= all
+  36 clean :=        TARGET= clean
+  37 clobber :=      TARGET= clobber
+  38 install :=      TARGET= install
+  39 lint :=         TARGET= lint
+  40 
+  41 .KEEP_STATE:
+  42 
+  43 all clean clobber install lint: $(SUBDIRS) 
+  44 
+  45 install_h: $(ROOTFMHDRS)
+  46 
+  47 check: $(CHECKHDRS)
+  48 
+  49 $(SUBDIRS): FRC
+  50         @cd $@; pwd; $(MAKE) $(TARGET)
   51 
-  52 $(SUBDIRS): FRC
-  53         @cd $@; pwd; $(MAKE) $(TARGET)
-  54 
-  55 FRC:
-  56 
-  57 include ../../Makefile.targ
-  58 include ../Makefile.targ
-<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+  52 FRC:
+  53 
+  54 include ../../Makefile.targ
+  55 include ../Makefile.targ
+<a name="2" id="anc2"></a><b style="font-size: large; color: red">--- EOF ---</b>
 
 
 
@@ -226,4 +223,4 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
 
 
 
-</pre><form name="eof"><input name="value" value="4" type="hidden"></input></form></body></html>
+</pre><form name="eof"><input name="value" value="2" type="hidden"></input></form></body></html>

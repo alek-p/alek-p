@@ -368,6 +368,8 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
 
 
 
+
+
 1147 /*
 1148  * Analyze the IE mode sense page explicitly.  This is only needed if the IE log
 1149  * page is not supported.
@@ -667,30 +669,32 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
 <span class="new">1248          * which is strange since we verified that it's there</span>
 <span class="new">1249          */</span>
 <span class="new">1250         dprintf("solid state media logpage analyze failed\n");</span>
-<span class="new">1251         assert(0);</span>
-<span class="new">1252         return (scsi_set_errno(sip, EDS_NOT_SUPPORTED));</span>
-<span class="new">1253 }</span>
-<span class="new">1254 </span>
-1255 /*
-1256  * Analyze the IE mode sense page explicitly.  This is only needed if the IE log
-1257  * page is not supported.
-1258  */
-1259 static int
-1260 analyze_ie_sense(ds_scsi_info_t *sip)
-1261 {
-1262         uint_t skey, asc, ascq;
-1263         nvlist_t *nvl;
-1264 
-1265         /*
-1266          * Don't bother checking if we weren't able to set our MRIE correctly.
-1267          */
-1268         if (sip-&gt;si_iec_current.ie_mrie != IE_REPORT_ON_REQUEST)
-1269                 return (0);
-1270 
-1271         if (scsi_request_sense(sip, &amp;skey, &amp;asc, &amp;ascq) != 0) {
-1272                 dprintf("failed to request IE page (KEY=0x%x ASC=0x%x "
-1273                     "ASCQ=0x%x)\n", skey, asc, ascq);
-1274                 return (scsi_set_errno(sip, EDS_IO));
+<span class="new">1251 #if DEBUG</span>
+<span class="new">1252         abort();</span>
+<span class="new">1253 #endif</span>
+<span class="new">1254         return (scsi_set_errno(sip, EDS_NOT_SUPPORTED));</span>
+<span class="new">1255 }</span>
+<span class="new">1256 </span>
+1257 /*
+1258  * Analyze the IE mode sense page explicitly.  This is only needed if the IE log
+1259  * page is not supported.
+1260  */
+1261 static int
+1262 analyze_ie_sense(ds_scsi_info_t *sip)
+1263 {
+1264         uint_t skey, asc, ascq;
+1265         nvlist_t *nvl;
+1266 
+1267         /*
+1268          * Don't bother checking if we weren't able to set our MRIE correctly.
+1269          */
+1270         if (sip-&gt;si_iec_current.ie_mrie != IE_REPORT_ON_REQUEST)
+1271                 return (0);
+1272 
+1273         if (scsi_request_sense(sip, &amp;skey, &amp;asc, &amp;ascq) != 0) {
+1274                 dprintf("failed to request IE page (KEY=0x%x ASC=0x%x "
+1275                     "ASCQ=0x%x)\n", skey, asc, ascq);
+1276                 return (scsi_set_errno(sip, EDS_IO));
 
 </pre><hr></hr>
 </pre></td>

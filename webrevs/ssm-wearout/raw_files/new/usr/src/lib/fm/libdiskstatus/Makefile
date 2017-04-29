@@ -21,7 +21,6 @@
 #
 # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
-# Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
 #
 
 include		../../Makefile.lib
@@ -32,8 +31,6 @@ FMHDRS=		libdiskstatus.h
 
 SUBDIRS=	$(MACH)
 $(BUILD64)SUBDIRS += $(MACH64)
-
-$(RELEASE_BUILD)CPPFLAGS += -DNDEBUG
 
 all :=		TARGET= all
 clean :=	TARGET= clean

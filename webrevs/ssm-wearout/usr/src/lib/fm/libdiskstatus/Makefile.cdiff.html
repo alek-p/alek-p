@@ -87,8 +87,7 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
         <a class="print" href="javascript:print()">Print this page</a>
 <pre><a href="https://illumos.org/issues/8074">8074</a> need to add FMA event for SSD wearout</pre>
         <pre>
-<hr></hr><span class="oldmarker">*** 19,30 ****</span>
-  # CDDL HEADER END
+<hr></hr><span class="oldmarker">*** 20,30 ****</span>
   #
   #
   # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -100,32 +99,6 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
   include         ../Makefile.lib
   
   HDRDIR=         common
-<span class="newmarker">--- 19,30 ----</span>
-  # CDDL HEADER END
-  #
-  #
-  # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
-  # Use is subject to license terms.
-<span class="new">+ # Copyright 2016 Nexenta Systems, Inc.  All rights reserved.</span>
-  #
-  
-  include         ../../Makefile.lib
-  include         ../Makefile.lib
-  
-  HDRDIR=         common
-<hr></hr><span class="oldmarker">*** 31,40 ****</span>
-<span class="newmarker">--- 31,42 ----</span>
-  FMHDRS=         libdiskstatus.h
-  
-  SUBDIRS=        $(MACH)
-  $(BUILD64)SUBDIRS += $(MACH64)
-  
-<span class="new">+ $(RELEASE_BUILD)CPPFLAGS += -DNDEBUG</span>
-<span class="new">+ </span>
-  all :=          TARGET= all
-  clean :=        TARGET= clean
-  clobber :=      TARGET= clobber
-  install :=      TARGET= install
-  lint :=         TARGET= lint
+<span class="newmarker">--- 20,29 ----</span>
 </pre></body></html>
 

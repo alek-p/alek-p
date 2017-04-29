@@ -107,39 +107,36 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
   21 #
   22 # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
   23 # Use is subject to license terms.
-  24 # Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
-  25 #
-  26 
-  27 include         ../../Makefile.lib
-  28 include         ../Makefile.lib
-  29 
-  30 HDRDIR=         common
-  31 FMHDRS=         libdiskstatus.h
-  32 
-  33 SUBDIRS=        $(MACH)
-  34 $(BUILD64)SUBDIRS += $(MACH64)
-  35 
-  36 $(RELEASE_BUILD)CPPFLAGS += -DNDEBUG
-  37 
-  38 all :=          TARGET= all
-  39 clean :=        TARGET= clean
-  40 clobber :=      TARGET= clobber
-  41 install :=      TARGET= install
-  42 lint :=         TARGET= lint
-  43 
-  44 .KEEP_STATE:
-  45 
-  46 all clean clobber install lint: $(SUBDIRS) 
-  47 
-  48 install_h: $(ROOTFMHDRS)
-  49 
-  50 check: $(CHECKHDRS)
+  24 #
+  25 
+  26 include         ../../Makefile.lib
+  27 include         ../Makefile.lib
+  28 
+  29 HDRDIR=         common
+  30 FMHDRS=         libdiskstatus.h
+  31 
+  32 SUBDIRS=        $(MACH)
+  33 $(BUILD64)SUBDIRS += $(MACH64)
+  34 
+  35 all :=          TARGET= all
+  36 clean :=        TARGET= clean
+  37 clobber :=      TARGET= clobber
+  38 install :=      TARGET= install
+  39 lint :=         TARGET= lint
+  40 
+  41 .KEEP_STATE:
+  42 
+  43 all clean clobber install lint: $(SUBDIRS) 
+  44 
+  45 install_h: $(ROOTFMHDRS)
+  46 
+  47 check: $(CHECKHDRS)
+  48 
+  49 $(SUBDIRS): FRC
+  50         @cd $@; pwd; $(MAKE) $(TARGET)
   51 
-  52 $(SUBDIRS): FRC
-  53         @cd $@; pwd; $(MAKE) $(TARGET)
-  54 
-  55 FRC:
-  56 
-  57 include ../../Makefile.targ
-  58 include ../Makefile.targ
+  52 FRC:
+  53 
+  54 include ../../Makefile.targ
+  55 include ../Makefile.targ
 </pre></body></html>

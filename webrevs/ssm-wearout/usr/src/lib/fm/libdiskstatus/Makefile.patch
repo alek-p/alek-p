@@ -1,21 +1,10 @@
---- old/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 23:15:27 2017
-+++ new/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 15 23:15:27 2017
-@@ -21,8 +21,8 @@
- #
+--- old/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 29 19:27:10 2017
++++ new/usr/src/lib/fm/libdiskstatus/Makefile	Sat Apr 29 19:27:10 2017
+@@ -22,7 +22,6 @@
  # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
  # Use is subject to license terms.
-+# Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
  #
 -#ident	"%Z%%M%	%I%	%E% SMI"
  
  include		../../Makefile.lib
  include		../Makefile.lib
-@@ -33,6 +33,8 @@
- SUBDIRS=	$(MACH)
- $(BUILD64)SUBDIRS += $(MACH64)
- 
-+$(RELEASE_BUILD)CPPFLAGS += -DNDEBUG
-+
- all :=		TARGET= all
- clean :=	TARGET= clean
- clobber :=	TARGET= clobber

@@ -154,20 +154,20 @@
   11   11  # and limitations under the License.
   12   12  #
   13   13  # When distributing Covered Code, include this CDDL HEADER in each
+  14   14  # file and include the License file at usr/src/OPENSOLARIS.LICENSE.
 </pre>
 <table id='hb-elided1' class='hidebar'>
   <tr>
     <td class='active-down'
       onclick='show_n_hide_dir("elided1", "hb-elided1", "down")'>
       &darr;&nbsp;open down&nbsp;&darr;</td>
-    <td class="elided-label">13 lines elided</td>
+    <td class="elided-label">14 lines elided</td>
     <td class='active-up'
       onclick='show_n_hide_dir("elided1", "hb-elided1", "up")'>
       &uarr;&nbsp;open up&nbsp;&uarr;</td>
   </tr>
 </table>
-<pre>  14   14  # file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-  15   15  # If applicable, add the following below this CDDL HEADER, with the
+<pre>  15   15  # If applicable, add the following below this CDDL HEADER, with the
   16   16  # fields enclosed by brackets "[]" replaced with your own identifying
   17   17  # information: Portions Copyright [yyyy] [name of copyright owner]
   18   18  #
@@ -176,50 +176,47 @@
   21   21  #
   22   22  # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
   23   23  # Use is subject to license terms.
-<span class='added'>       24 +# Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
-</span>  24   25  #
+  24   24  #
 <span class='subtracted'>  25      -#ident  "%Z%%M% %I%     %E% SMI"
-</span>  26   26  
-  27   27  include         ../../Makefile.lib
-  28   28  include         ../Makefile.lib
-  29   29  
-  30   30  HDRDIR=         common
-  31   31  FMHDRS=         libdiskstatus.h
-  32   32  
-  33   33  SUBDIRS=        $(MACH)
-  34   34  $(BUILD64)SUBDIRS += $(MACH64)
-  35   35  
-<span class='added'>       36 +$(RELEASE_BUILD)CPPFLAGS += -DNDEBUG
-       37 +
-</span>  36   38  all :=          TARGET= all
-  37   39  clean :=        TARGET= clean
-  38   40  clobber :=      TARGET= clobber
-  39   41  install :=      TARGET= install
-  40   42  lint :=         TARGET= lint
-  41   43  
-  42   44  .KEEP_STATE:
-  43   45  
-  44   46  all clean clobber install lint: $(SUBDIRS) 
-  45   47  
+</span>  26   25  
+  27   26  include         ../../Makefile.lib
+  28   27  include         ../Makefile.lib
+  29   28  
+  30   29  HDRDIR=         common
+  31   30  FMHDRS=         libdiskstatus.h
+  32   31  
+  33   32  SUBDIRS=        $(MACH)
+  34   33  $(BUILD64)SUBDIRS += $(MACH64)
+  35   34  
 </pre>
-<pre id='elided2' class='elided' style='display: none'>  46   48  install_h: $(ROOTFMHDRS)
-  47   49  
-  48   50  check: $(CHECKHDRS)
-  49   51  
-  50   52  $(SUBDIRS): FRC
-  51   53          @cd $@; pwd; $(MAKE) $(TARGET)
-  52   54  
-  53   55  FRC:
-  54   56  
-  55   57  include ../../Makefile.targ
-  56   58  include ../Makefile.targ
+<pre id='elided2' class='elided' style='display: none'>  36   35  all :=          TARGET= all
+  37   36  clean :=        TARGET= clean
+  38   37  clobber :=      TARGET= clobber
+  39   38  install :=      TARGET= install
+  40   39  lint :=         TARGET= lint
+  41   40  
+  42   41  .KEEP_STATE:
+  43   42  
+  44   43  all clean clobber install lint: $(SUBDIRS) 
+  45   44  
+  46   45  install_h: $(ROOTFMHDRS)
+  47   46  
+  48   47  check: $(CHECKHDRS)
+  49   48  
+  50   49  $(SUBDIRS): FRC
+  51   50          @cd $@; pwd; $(MAKE) $(TARGET)
+  52   51  
+  53   52  FRC:
+  54   53  
+  55   54  include ../../Makefile.targ
+  56   55  include ../Makefile.targ
 </pre>
 <table id='hb-elided2' class='hidebar'>
   <tr>
     <td class='active-down'
       onclick='show_n_hide_dir("elided2", "hb-elided2", "down")'>
       &darr;&nbsp;open down&nbsp;&darr;</td>
-    <td class="elided-label">11 lines elided</td>
+    <td class="elided-label">21 lines elided</td>
     <td class='active-up'
       onclick='show_n_hide_dir("elided2", "hb-elided2", "up")'>
       &uarr;&nbsp;open up&nbsp;&uarr;</td>

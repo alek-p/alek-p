@@ -210,7 +210,7 @@ span.new {
  load_ie_modepage(ds_scsi_info_t *sip)
  {
 </pre><hr></hr><pre>
-<span class="newmarker">@@ -1142,10 +1193,67 @@</span>
+<span class="newmarker">@@ -1142,10 +1193,69 @@</span>
          }
  
          return (0);
@@ -269,7 +269,9 @@ span.new {
 <span class="new">+         * which is strange since we verified that it's there</span>
 <span class="new">+         */</span>
 <span class="new">+        dprintf("solid state media logpage analyze failed\n");</span>
-<span class="new">+        assert(0);</span>
+<span class="new">+#if DEBUG</span>
+<span class="new">+        abort();</span>
+<span class="new">+#endif</span>
 <span class="new">+        return (scsi_set_errno(sip, EDS_NOT_SUPPORTED));</span>
 <span class="new">+}</span>
 <span class="new">+</span>

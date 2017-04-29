@@ -224,7 +224,7 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
   load_ie_modepage(ds_scsi_info_t *sip)
   {
 <hr></hr><span class="oldmarker">*** 1142,1151 ****</span>
-<span class="newmarker">--- 1193,1259 ----</span>
+<span class="newmarker">--- 1193,1261 ----</span>
           }
   
           return (0);
@@ -283,7 +283,9 @@ hr { border: none 0; border-top: 1px solid #aaa; height: 1px; }
 <span class="new">+          * which is strange since we verified that it's there</span>
 <span class="new">+          */</span>
 <span class="new">+         dprintf("solid state media logpage analyze failed\n");</span>
-<span class="new">+         assert(0);</span>
+<span class="new">+ #if DEBUG</span>
+<span class="new">+         abort();</span>
+<span class="new">+ #endif</span>
 <span class="new">+         return (scsi_set_errno(sip, EDS_NOT_SUPPORTED));</span>
 <span class="new">+ }</span>
 <span class="new">+ </span>

@@ -7,7 +7,6 @@ usr/src/cmd/fm/modules/common/disk-transport/disk-transport.conf
 usr/src/cmd/fm/modules/common/disk-transport/disk_transport.c
 usr/src/cmd/fm/modules/common/zfs-retire/zfs-retire.conf
 usr/src/cmd/fm/modules/common/zfs-retire/zfs_retire.c
-usr/src/lib/fm/libdiskstatus/Makefile
 usr/src/lib/fm/libdiskstatus/common/ds_impl.h
 usr/src/lib/fm/libdiskstatus/common/ds_scsi.c
 usr/src/lib/fm/libdiskstatus/common/ds_scsi.h

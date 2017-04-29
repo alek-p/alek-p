@@ -1,5 +1,5 @@
---- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 23:15:27 2017
-+++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 15 23:15:27 2017
+--- old/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 29 19:34:06 2017
++++ new/usr/src/lib/fm/libdiskstatus/common/ds_scsi.c	Sat Apr 29 19:34:06 2017
 @@ -21,10 +21,9 @@
  /*
   * Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
@@ -94,7 +94,7 @@
   * Load the current IE mode pages
   */
  static int
-@@ -1144,6 +1195,63 @@
+@@ -1144,6 +1195,65 @@
  	return (0);
  }
  
@@ -151,7 +151,9 @@
 +	 * which is strange since we verified that it's there
 +	 */
 +	dprintf("solid state media logpage analyze failed\n");
-+	assert(0);
++#if DEBUG
++	abort();
++#endif
 +	return (scsi_set_errno(sip, EDS_NOT_SUPPORTED));
 +}
 +
